@@ -1,5 +1,4 @@
-# path: sylabus.md
-# PolicyLens: Insurance Ops Claims Triage and Compliance Workflow
+# PolicyLens: Insurance Claims Fraud Risk Scoring System
 
 Duration: 6 Weeks (30 Lab Days, Mon–Fri)  
 Format: Hands-on postgraduate programming lab  
