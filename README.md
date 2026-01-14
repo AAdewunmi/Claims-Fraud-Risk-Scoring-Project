@@ -151,6 +151,6 @@ The demo script runs a health check, creates sample data, triggers scoring, and 
 
 ## License
 
-Add a license when the repository is ready for publication.
-```
+License
+
 
