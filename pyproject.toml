@@ -1,0 +1,25 @@
+# path: pyproject.toml
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+exclude = '''
+/(
+  \.git
+| \.venv
+| venv
+| __pycache__
+| migrations
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "apps", "tests"]
