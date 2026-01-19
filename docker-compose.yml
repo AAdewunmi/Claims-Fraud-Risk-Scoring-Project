@@ -23,7 +23,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./policylens:/app/policylens
+      - ./:/app
     ports:
       - "8000:8000"
     depends_on:
