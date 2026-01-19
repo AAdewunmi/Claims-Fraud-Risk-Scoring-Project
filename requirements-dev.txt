@@ -6,3 +6,5 @@ factory-boy>=3.3,<4.0
 Faker>=25.0,<26.0
 ruff>=0.5,<1.0
 black>=24.0,<25.0
+flake8>=7.0,<8.0
+django-environ>=0.11,<1.0
