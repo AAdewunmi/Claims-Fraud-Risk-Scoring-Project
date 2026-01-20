@@ -112,3 +112,19 @@ class ClaimDocument(models.Model):
         indexes = [
             models.Index(fields=["claim", "uploaded_at"]),
         ]
+
+class ChecklistItem(models.Model):
+    """A deterministic checklist item used for completeness and review."""
+
+    claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="checklist_items")
+    key = models.CharField(max_length=64)
+    label = models.CharField(max_length=255)
+    is_required = models.BooleanField(default=True)
+    is_satisfied = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [("claim", "key")]
+        indexes = [
+            models.Index(fields=["claim", "is_satisfied"]),
+        ]
