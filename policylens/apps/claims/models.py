@@ -27,3 +27,29 @@ class PolicyHolder(models.Model):
 
     def __str__(self) -> str:
         return f"{self.full_name}".strip() or f"PolicyHolder:{self.pk}"
+    
+    
+class Policy(models.Model):
+    """An insurance policy linked to a policy holder."""
+
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Active"
+        LAPSED = "LAPSED", "Lapsed"
+        CANCELLED = "CANCELLED", "Cancelled"
+
+    holder = models.ForeignKey(PolicyHolder, on_delete=models.PROTECT, related_name="policies")
+    policy_number = models.CharField(max_length=64, unique=True)
+    product_type = models.CharField(max_length=128)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
+    effective_date = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["policy_number"]),
+            models.Index(fields=["status"]),
+        ]
+
+    def __str__(self) -> str:
+        return self.policy_number
