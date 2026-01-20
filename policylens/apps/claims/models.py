@@ -113,6 +113,7 @@ class ClaimDocument(models.Model):
             models.Index(fields=["claim", "uploaded_at"]),
         ]
 
+
 class ChecklistItem(models.Model):
     """A deterministic checklist item used for completeness and review."""
 
@@ -127,4 +128,24 @@ class ChecklistItem(models.Model):
         unique_together = [("claim", "key")]
         indexes = [
             models.Index(fields=["claim", "is_satisfied"]),
+        ]
+        
+
+class ReviewDecision(models.Model):
+    """A decision record for a claim, forming the basis of a decision timeline."""
+
+    class Decision(models.TextChoices):
+        APPROVE = "APPROVE", "Approve"
+        REJECT = "REJECT", "Reject"
+        REQUEST_INFO = "REQUEST_INFO", "Request info"
+
+    claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="decisions")
+    decision = models.CharField(max_length=32, choices=Decision.choices)
+    notes = models.TextField(blank=True)
+    decided_by = models.CharField(max_length=128, blank=True)
+    decided_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["claim", "decided_at"]),
         ]
