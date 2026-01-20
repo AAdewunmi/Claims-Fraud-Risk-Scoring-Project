@@ -6,7 +6,7 @@ from django.urls import path
 from apps.claims.api.views import ClaimListCreateAPIView
 
 urlpatterns = [
-    path("claims/", 
-         ClaimListCreateAPIView.as_view(), 
+    path("claims/",
+         ClaimListCreateAPIView.as_view(),
          name="claims-list-create"),
 ]
