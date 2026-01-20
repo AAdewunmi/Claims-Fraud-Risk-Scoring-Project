@@ -28,7 +28,7 @@ class PolicyHolder(models.Model):
     def __str__(self) -> str:
         return f"{self.full_name}".strip() or f"PolicyHolder:{self.pk}"
     
-    
+
 class Policy(models.Model):
     """An insurance policy linked to a policy holder."""
 
@@ -53,3 +53,43 @@ class Policy(models.Model):
 
     def __str__(self) -> str:
         return self.policy_number
+    
+    
+class Claim(models.Model):
+    """A claim or policy change submission that moves through an ops review workflow."""
+
+    class Type(models.TextChoices):
+        CLAIM = "CLAIM", "Claim"
+        POLICY_CHANGE = "POLICY_CHANGE", "Policy change"
+
+    class Status(models.TextChoices):
+        NEW = "NEW", "New"
+        IN_REVIEW = "IN_REVIEW", "In review"
+        DECIDED = "DECIDED", "Decided"
+
+    class Priority(models.TextChoices):
+        LOW = "LOW", "Low"
+        NORMAL = "NORMAL", "Normal"
+        HIGH = "HIGH", "High"
+
+    policy = models.ForeignKey(Policy, on_delete=models.PROTECT, related_name="claims")
+    claim_type = models.CharField(max_length=32, choices=Type.choices)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.NEW)
+    priority = models.CharField(max_length=16, choices=Priority.choices, default=Priority.NORMAL)
+    summary = models.TextField(blank=True)
+
+    # Week 2 introduces roles and permissions. Week 1 keeps actor simple and string-based.
+    created_by = models.CharField(max_length=128, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["status", "priority"]),
+            models.Index(fields=["created_at"]),
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"Claim:{self.pk} {self.status}"
