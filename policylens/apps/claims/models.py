@@ -93,3 +93,22 @@ class Claim(models.Model):
 
     def __str__(self) -> str:
         return f"Claim:{self.pk} {self.status}"
+    
+    
+class ClaimDocument(models.Model):
+    """Document metadata linked to a claim.
+
+    Week 1 stores metadata only. Week 2+ adds upload endpoints and storage integration.
+    """
+
+    claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="documents")
+    original_filename = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=128, blank=True)
+    size_bytes = models.PositiveIntegerField(default=0)
+    storage_key = models.CharField(max_length=255, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["claim", "uploaded_at"]),
+        ]
