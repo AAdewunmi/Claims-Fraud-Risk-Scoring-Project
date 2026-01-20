@@ -13,7 +13,7 @@ test:
 	pytest -q
 
 migrate:
-	python policylens/manage.py migrate
+	python manage.py migrate
 
 run:
-	python policylens/manage.py runserver 0.0.0.0:8000
+	python manage.py runserver 0.0.0.0:8000

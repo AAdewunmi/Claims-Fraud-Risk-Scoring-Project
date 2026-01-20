@@ -31,8 +31,8 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-      python policylens/manage.py migrate --noinput &&
-      python policylens/manage.py runserver 0.0.0.0:8000
+      python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000
       "
 
 volumes:

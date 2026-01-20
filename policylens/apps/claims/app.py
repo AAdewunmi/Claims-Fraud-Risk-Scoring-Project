@@ -8,4 +8,4 @@ class ClaimsConfig(AppConfig):
     """Config for the claims app."""
 
     default_auto_field = "django.db.models.BigAutoField"
-    name = "apps.claims"
+    name = "policylens.apps.claims"

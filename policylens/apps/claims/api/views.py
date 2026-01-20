@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from rest_framework.generics import ListCreateAPIView
 
-from apps.claims.api.serializers import ClaimSerializer
-from apps.claims.models import Claim
+from policylens.apps.claims.api.serializers import ClaimSerializer
+from policylens.apps.claims.models import Claim
 
 
 class ClaimListCreateAPIView(ListCreateAPIView):

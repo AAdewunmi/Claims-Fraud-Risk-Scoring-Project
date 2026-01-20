@@ -78,9 +78,9 @@ Exact paths may change as the lab progresses.
 2. Start the stack:
    - docker compose up --build
 3. Run migrations:
-   - docker compose exec web python policylens/manage.py migrate --noinput
+   - docker compose exec web python manage.py migrate --noinput
 4. Create demo users:
-   - docker compose exec web python policylens/manage.py create_demo_users
+   - docker compose exec web python manage.py create_demo_users
 5. Open:
    - API health: http://localhost:8000/api/health/
    - Ops UI: http://localhost:8000/ops/
@@ -139,7 +139,7 @@ HTMX actions support note creation, document upload, decision recording, and ris
 
 After starting the production stack:
 
-- docker compose -f docker-compose.prod.yml exec web python policylens/manage.py create_demo_users
+- docker compose -f docker-compose.prod.yml exec web python manage.py create_demo_users
 - bash scripts/demo.sh
 
 The demo script runs a health check, creates sample data, triggers scoring, and fetches audit exports.

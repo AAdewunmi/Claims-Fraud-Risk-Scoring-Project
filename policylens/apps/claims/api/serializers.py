@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from apps.claims import services
-from apps.claims.models import Claim, Policy
+from policylens.apps.claims import services
+from policylens.apps.claims.models import Claim, Policy
 
 
 class ClaimSerializer(serializers.ModelSerializer):

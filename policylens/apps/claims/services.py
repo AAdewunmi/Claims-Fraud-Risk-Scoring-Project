@@ -12,7 +12,7 @@ from typing import Any
 
 from django.db import transaction
 
-from apps.claims.models import AuditEvent, Claim, Policy
+from policylens.apps.claims.models import AuditEvent, Claim, Policy
 
 
 def append_audit_event(

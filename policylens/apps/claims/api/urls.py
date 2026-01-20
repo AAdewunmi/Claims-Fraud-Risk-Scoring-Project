@@ -3,7 +3,7 @@
 
 from django.urls import path
 
-from apps.claims.api.views import ClaimListCreateAPIView
+from policylens.apps.claims.api.views import ClaimListCreateAPIView
 
 urlpatterns = [
     path("claims/",
