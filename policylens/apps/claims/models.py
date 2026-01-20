@@ -3,7 +3,8 @@
 Claims domain models.
 
 Week 1 scope:
-- Minimal workflow entities to support claim intake and an append-only audit trail.
+- Minimal workflow entities to support claim intake and
+an append-only audit trail.
 - Fields are intentionally conservative to keep migrations stable early.
 """
 
@@ -27,7 +28,7 @@ class PolicyHolder(models.Model):
 
     def __str__(self) -> str:
         return f"{self.full_name}".strip() or f"PolicyHolder:{self.pk}"
-    
+
 
 class Policy(models.Model):
     """An insurance policy linked to a policy holder."""
@@ -37,10 +38,18 @@ class Policy(models.Model):
         LAPSED = "LAPSED", "Lapsed"
         CANCELLED = "CANCELLED", "Cancelled"
 
-    holder = models.ForeignKey(PolicyHolder, on_delete=models.PROTECT, related_name="policies")
+    holder = models.ForeignKey(
+        PolicyHolder,
+        on_delete=models.PROTECT,
+        related_name="policies",
+    )
     policy_number = models.CharField(max_length=64, unique=True)
     product_type = models.CharField(max_length=128)
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
     effective_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -53,10 +62,11 @@ class Policy(models.Model):
 
     def __str__(self) -> str:
         return self.policy_number
-    
-    
+
+
 class Claim(models.Model):
-    """A claim or policy change submission that moves through an ops review workflow."""
+    """A claim or policy change submission that moves
+    through an ops review workflow."""
 
     class Type(models.TextChoices):
         CLAIM = "CLAIM", "Claim"
@@ -72,13 +82,26 @@ class Claim(models.Model):
         NORMAL = "NORMAL", "Normal"
         HIGH = "HIGH", "High"
 
-    policy = models.ForeignKey(Policy, on_delete=models.PROTECT, related_name="claims")
+    policy = models.ForeignKey(
+        Policy,
+        on_delete=models.PROTECT,
+        related_name="claims",
+    )
     claim_type = models.CharField(max_length=32, choices=Type.choices)
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.NEW)
-    priority = models.CharField(max_length=16, choices=Priority.choices, default=Priority.NORMAL)
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.NEW,
+    )
+    priority = models.CharField(
+        max_length=16,
+        choices=Priority.choices,
+        default=Priority.NORMAL,
+    )
     summary = models.TextField(blank=True)
 
-    # Week 2 introduces roles and permissions. Week 1 keeps actor simple and string-based.
+    # Week 2 introduces roles and permissions.
+    # Week 1 keeps actor simple and string-based.
     created_by = models.CharField(max_length=128, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -93,15 +116,20 @@ class Claim(models.Model):
 
     def __str__(self) -> str:
         return f"Claim:{self.pk} {self.status}"
-    
-    
+
+
 class ClaimDocument(models.Model):
     """Document metadata linked to a claim.
 
-    Week 1 stores metadata only. Week 2+ adds upload endpoints and storage integration.
+    Week 1 stores metadata only.
+    Week 2+ adds upload endpoints and storage integration.
     """
 
-    claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="documents")
+    claim = models.ForeignKey(
+        Claim,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
     original_filename = models.CharField(max_length=255)
     content_type = models.CharField(max_length=128, blank=True)
     size_bytes = models.PositiveIntegerField(default=0)
@@ -117,7 +145,11 @@ class ClaimDocument(models.Model):
 class ChecklistItem(models.Model):
     """A deterministic checklist item used for completeness and review."""
 
-    claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="checklist_items")
+    claim = models.ForeignKey(
+        Claim,
+        on_delete=models.CASCADE,
+        related_name="checklist_items",
+    )
     key = models.CharField(max_length=64)
     label = models.CharField(max_length=255)
     is_required = models.BooleanField(default=True)
@@ -132,14 +164,19 @@ class ChecklistItem(models.Model):
 
 
 class ReviewDecision(models.Model):
-    """A decision record for a claim, forming the basis of a decision timeline."""
+    """A decision record for a claim,
+    forming the basis of a decision timeline."""
 
     class Decision(models.TextChoices):
         APPROVE = "APPROVE", "Approve"
         REJECT = "REJECT", "Reject"
         REQUEST_INFO = "REQUEST_INFO", "Request info"
 
-    claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="decisions")
+    claim = models.ForeignKey(
+        Claim,
+        on_delete=models.CASCADE,
+        related_name="decisions",
+    )
     decision = models.CharField(max_length=32, choices=Decision.choices)
     notes = models.TextField(blank=True)
     decided_by = models.CharField(max_length=128, blank=True)
@@ -157,7 +194,11 @@ class SlaClock(models.Model):
     Week 3 defines deterministic SLA rules and queue prioritisation logic.
     """
 
-    claim = models.OneToOneField(Claim, on_delete=models.CASCADE, related_name="sla_clock")
+    claim = models.OneToOneField(
+        Claim,
+        on_delete=models.CASCADE,
+        related_name="sla_clock",
+    )
     started_at = models.DateTimeField(auto_now_add=True)
     due_at = models.DateTimeField(null=True, blank=True)
     breached_at = models.DateTimeField(null=True, blank=True)
@@ -166,10 +207,15 @@ class SlaClock(models.Model):
 class AuditEvent(models.Model):
     """Append-only audit event table.
 
-    Treat this as evidence. Updates and deletes should be avoided by convention.
+    Treat this as evidence.
+    Updates and deletes should be avoided by convention.
     """
 
-    claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="audit_events")
+    claim = models.ForeignKey(
+        Claim,
+        on_delete=models.CASCADE,
+        related_name="audit_events",
+    )
     event_type = models.CharField(max_length=64)
     actor = models.CharField(max_length=128, blank=True)
     payload = models.JSONField(default=dict)
@@ -181,3 +227,21 @@ class AuditEvent(models.Model):
             models.Index(fields=["event_type"]),
         ]
         ordering = ["-created_at"]
+
+
+class MlScore(models.Model):
+    """ML score placeholder.
+
+    Week 4 introduces training, feature contracts,
+    reason codes, and scoring integration.
+    """
+
+    claim = models.OneToOneField(
+        Claim,
+        on_delete=models.CASCADE,
+        related_name="ml_score",
+    )
+    score = models.FloatField(default=0.0)
+    label = models.CharField(max_length=32, blank=True)
+    reason_codes = models.JSONField(default=list)
+    scored_at = models.DateTimeField(auto_now=True)
