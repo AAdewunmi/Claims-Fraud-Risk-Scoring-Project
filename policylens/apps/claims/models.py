@@ -129,7 +129,7 @@ class ChecklistItem(models.Model):
         indexes = [
             models.Index(fields=["claim", "is_satisfied"]),
         ]
-        
+
 
 class ReviewDecision(models.Model):
     """A decision record for a claim, forming the basis of a decision timeline."""
@@ -149,3 +149,15 @@ class ReviewDecision(models.Model):
         indexes = [
             models.Index(fields=["claim", "decided_at"]),
         ]
+        
+
+class SlaClock(models.Model):
+    """A simple SLA timer record.
+
+    Week 3 defines deterministic SLA rules and queue prioritisation logic.
+    """
+
+    claim = models.OneToOneField(Claim, on_delete=models.CASCADE, related_name="sla_clock")
+    started_at = models.DateTimeField(auto_now_add=True)
+    due_at = models.DateTimeField(null=True, blank=True)
+    breached_at = models.DateTimeField(null=True, blank=True)
