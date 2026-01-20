@@ -149,7 +149,7 @@ class ReviewDecision(models.Model):
         indexes = [
             models.Index(fields=["claim", "decided_at"]),
         ]
-        
+
 
 class SlaClock(models.Model):
     """A simple SLA timer record.
@@ -161,3 +161,23 @@ class SlaClock(models.Model):
     started_at = models.DateTimeField(auto_now_add=True)
     due_at = models.DateTimeField(null=True, blank=True)
     breached_at = models.DateTimeField(null=True, blank=True)
+
+
+class AuditEvent(models.Model):
+    """Append-only audit event table.
+
+    Treat this as evidence. Updates and deletes should be avoided by convention.
+    """
+
+    claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="audit_events")
+    event_type = models.CharField(max_length=64)
+    actor = models.CharField(max_length=128, blank=True)
+    payload = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["claim", "created_at"]),
+            models.Index(fields=["event_type"]),
+        ]
+        ordering = ["-created_at"]
