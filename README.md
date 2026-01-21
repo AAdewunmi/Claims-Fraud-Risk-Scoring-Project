@@ -2,7 +2,7 @@
 
 # PolicyLens: Insurance Claims Fraud Risk Scoring System
 
-PolicyLens is an insurance operations workflow prototype that helps teams prioritise claims for review using fraud risk scoring, deterministic SLA rules, and exportable audit evidence. It is built as a postgraduate-style engineering lab, focusing on API-first design, testable domain services, and production-minded delivery.
+PolicyLens is an insurance operations workflow prototype that helps teams prioritise claims for review using fraud risk scoring, deterministic SLA rules, and exportable audit evidence. This build focuses on API-first design, testable domain services, and production-minded delivery.
 
 Work is in progress. The system runs end-to-end, but features, endpoints, and UI flows will continue to evolve as milestones are completed.
 
