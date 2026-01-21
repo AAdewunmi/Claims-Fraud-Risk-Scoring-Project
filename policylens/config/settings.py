@@ -30,18 +30,11 @@ if env_file.exists():
 # SECURITY WARNING: keep the secret key used in production secret.
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
-    raise RuntimeError(
-        "DJANGO_SECRET_KEY is required. Set it in .env or environment "
-        "variables."
-    )
+    raise RuntimeError("DJANGO_SECRET_KEY is required. Set it in .env or environment " "variables.")
 
 DEBUG = env("DJANGO_DEBUG")
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in env("DJANGO_ALLOWED_HOSTS").split(",")
-    if host.strip()
-]
+ALLOWED_HOSTS = [host.strip() for host in env("DJANGO_ALLOWED_HOSTS").split(",") if host.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -94,29 +87,15 @@ DATABASES = {
 DATABASES["default"]["CONN_MAX_AGE"] = 60
 
 AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": ("django.contrib.auth.password_validation." "UserAttributeSimilarityValidator")},
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "UserAttributeSimilarityValidator"
-        )
+        "NAME": ("django.contrib.auth.password_validation." "MinimumLengthValidator"),
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "MinimumLengthValidator"
-        ),
+        "NAME": ("django.contrib.auth.password_validation." "CommonPasswordValidator"),
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "CommonPasswordValidator"
-        ),
-    },
-    {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "NumericPasswordValidator"
-        ),
+        "NAME": ("django.contrib.auth.password_validation." "NumericPasswordValidator"),
     },
 ]
 

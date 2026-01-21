@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from apps.claims import services
-from apps.claims.models import AuditEvent, Claim
+from policylens.apps.claims import services
+from policylens.apps.claims.models import AuditEvent, Claim
 from tests.factories import PolicyFactory
 
 
@@ -31,8 +31,7 @@ def test_create_claim_appends_audit_event():
     assert claim.status == Claim.Status.NEW
     assert claim.created_by == "reviewer-1"
 
-    event = AuditEvent.objects.filter(claim=claim,
-                                      event_type="CLAIM_CREATED").first()
+    event = AuditEvent.objects.filter(claim=claim, event_type="CLAIM_CREATED").first()
     assert event is not None
     assert event.actor == "reviewer-1"
     assert event.payload["policy_number"] == "PL-0001"

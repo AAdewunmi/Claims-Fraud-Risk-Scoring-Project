@@ -23,9 +23,7 @@ class ClaimSerializer(serializers.ModelSerializer):
         queryset=Policy.objects.all(),
         write_only=True,
     )
-    policy_number = serializers.CharField(
-        source="policy.policy_number",
-        read_only=True)
+    policy_number = serializers.CharField(source="policy.policy_number", read_only=True)
 
     class Meta:
         model = Claim

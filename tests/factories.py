@@ -12,7 +12,7 @@ from __future__ import annotations
 import factory
 from factory import Faker
 
-from apps.claims.models import Claim, Policy, PolicyHolder
+from policylens.apps.claims.models import Claim, Policy, PolicyHolder
 
 
 class PolicyHolderFactory(factory.django.DjangoModelFactory):
