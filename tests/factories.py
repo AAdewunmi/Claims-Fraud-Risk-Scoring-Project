@@ -2,7 +2,8 @@
 """
 Factories for deterministic test data.
 
-Factories target the domain models, not DRF serializers, so that tests can focus on
+Factories target the domain models, not DRF serializers,
+so that tests can focus on
 boundary behaviour and service-layer rules.
 """
 
@@ -23,3 +24,15 @@ class PolicyHolderFactory(factory.django.DjangoModelFactory):
     full_name = Faker("name")
     email = Faker("email")
     phone = Faker("phone_number")
+
+
+class PolicyFactory(factory.django.DjangoModelFactory):
+    """Factory for Policy."""
+
+    class Meta:
+        model = Policy
+
+    holder = factory.SubFactory(PolicyHolderFactory)
+    policy_number = factory.Sequence(lambda n: f"PL-{n:04d}")
+    product_type = "Home Insurance"
+    status = Policy.Status.ACTIVE
