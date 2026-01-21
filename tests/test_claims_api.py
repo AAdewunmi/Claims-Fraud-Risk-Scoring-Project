@@ -39,4 +39,27 @@ def test_post_claim_creates_claim_and_audit_event(api_client):
 
     claim_id = body["id"]
     assert Claim.objects.filter(pk=claim_id).exists()
-    assert AuditEvent.objects.filter(claim_id=claim_id, event_type="CLAIM_CREATED").exists()
+    assert AuditEvent.objects.filter(
+        claim_id=claim_id, event_type="CLAIM_CREATED").exists()
+
+
+@pytest.mark.django_db
+def test_get_claims_filters_by_status_and_priority(api_client):
+    """GET /api/claims/?status=&priority= filters deterministically."""
+    ClaimFactory(status=Claim.Status.NEW, priority=Claim.Priority.NORMAL)
+    ClaimFactory(status=Claim.Status.IN_REVIEW, priority=Claim.Priority.HIGH)
+    ClaimFactory(status=Claim.Status.IN_REVIEW, priority=Claim.Priority.NORMAL)
+
+    url = reverse("claims-list-create")
+
+    resp = api_client.get(url,
+                          data={"status":
+                                Claim.Status.IN_REVIEW,
+                                "priority": Claim.Priority.NORMAL})
+    assert resp.status_code == 200
+
+    results = resp.json()
+    assert isinstance(results, list)
+    assert len(results) == 1
+    assert results[0]["status"] == Claim.Status.IN_REVIEW
+    assert results[0]["priority"] == Claim.Priority.NORMAL
