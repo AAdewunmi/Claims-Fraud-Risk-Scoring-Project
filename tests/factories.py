@@ -36,3 +36,17 @@ class PolicyFactory(factory.django.DjangoModelFactory):
     policy_number = factory.Sequence(lambda n: f"PL-{n:04d}")
     product_type = "Home Insurance"
     status = Policy.Status.ACTIVE
+
+
+class ClaimFactory(factory.django.DjangoModelFactory):
+    """Factory for Claim."""
+
+    class Meta:
+        model = Claim
+
+    policy = factory.SubFactory(PolicyFactory)
+    claim_type = Claim.Type.CLAIM
+    status = Claim.Status.NEW
+    priority = Claim.Priority.NORMAL
+    summary = Faker("sentence")
+    created_by = "test-actor"
