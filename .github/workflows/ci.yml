@@ -54,7 +54,7 @@ jobs:
 
       - name: Migrate
         run: |
-          python policylens/manage.py migrate --noinput
+          python manage.py migrate --noinput
 
       - name: Run tests
         run: |
