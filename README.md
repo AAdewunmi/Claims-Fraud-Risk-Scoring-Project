@@ -1,3 +1,17 @@
+[![CI Pipeline](https://img.shields.io/github/actions/workflow/status/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/ci.yml?branch=main)](https://github.com/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/actions/workflows/ci.yml)
+[![Code Style - Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://black.readthedocs.io/)
+[![Lint - Ruff](https://img.shields.io/badge/lint-ruff-000000.svg)](https://docs.astral.sh/ruff/)
+[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/django-5.x-0C4B33.svg)](https://www.djangoproject.com/)
+[![DRF](https://img.shields.io/badge/DRF-3.15-red.svg)](https://www.django-rest-framework.org/)
+[![PostgreSQL](https://img.shields.io/badge/postgresql-16-336791.svg)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/docker-enabled-2496ED.svg)](https://www.docker.com/)
+[![Docker Compose](https://img.shields.io/badge/docker%20compose-supported-2496ED.svg)](https://docs.docker.com/compose/)
+[![Licence](https://img.shields.io/github/license/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)](https://github.com/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/blob/main/LICENSE)
+[![Test Coverage](https://img.shields.io/codecov/c/github/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)
+[![Coverage Status](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/branch/main/graph/badge.svg)](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)
+
+
 # UNDER CONSTRUCTION
 
 # PolicyLens: Insurance Claims Fraud Risk Scoring System
@@ -54,6 +68,7 @@ Planned next:
 
 Typical structure:
 
+- `manage.py` Django management entrypoint (repo root)
 - `policylens/` Django project root
 - `policylens/apps/claims/` domain models, services, API, exports, risk scoring
 - `policylens/apps/ops/` server-rendered ops UI (templates + HTMX)
@@ -104,6 +119,12 @@ CI enforces:
 - pytest with Postgres
 - coverage threshold
 
+Coverage reports are uploaded to Codecov from CI. Since the repo is public, no token is required.
+View the coverage report here:
+```
+https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project
+```
+
 ## Local production simulation
 
 A production-style stack is provided using Gunicorn and Nginx.
@@ -152,5 +173,3 @@ The demo script runs a health check, creates sample data, triggers scoring, and 
 ## License
 
 License
-
-
