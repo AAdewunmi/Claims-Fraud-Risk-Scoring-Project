@@ -16,7 +16,7 @@
 
 # PolicyLens: Insurance Claims Fraud Risk Scoring System
 
-PolicyLens is an insurance operations workflow prototype that helps teams prioritise claims for review using fraud risk scoring, deterministic SLA rules, and exportable audit evidence. This build focuses on API-first design, testable domain services, and production-minded delivery.
+PolicyLens is an insurance operations and compliance workflow prototype that helps teams prioritise claims for review using fraud risk scoring, deterministic SLA rules, and exportable audit evidence. This build focuses on API-first design, testable domain services, and production-minded delivery.
 
 Work is in progress. The system runs end-to-end, but features, endpoints, and UI flows will continue to evolve as milestones are completed.
 
@@ -64,6 +64,15 @@ Planned next:
 - Additional tests covering failure modes, idempotency, and edge cases
 - Performance checks for queue queries and export endpoints
 
+## Stack
+
+- Django + Django REST Framework
+- PostgreSQL
+- Docker Compose
+- pytest + pytest-django + factory_boy
+- ruff + black
+- GitHub Actions CI
+
 ## Repository layout
 
 Typical structure:
@@ -94,9 +103,11 @@ Exact paths may change as the lab progresses.
    - docker compose up --build
 3. Run migrations:
    - docker compose exec web python manage.py migrate --noinput
-4. Create demo users:
+4. Seed sample data
+   - docker compose exec web python policylens/manage.py seed_sample_data
+5. Create demo users:
    - docker compose exec web python manage.py create_demo_users
-5. Open:
+6. Open:
    - API health: http://localhost:8000/api/health/
    - Ops UI: http://localhost:8000/ops/
 
