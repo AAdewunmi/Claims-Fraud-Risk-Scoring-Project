@@ -13,8 +13,8 @@ from datetime import date
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.claims.models import Claim, Policy, PolicyHolder
-from apps.claims.services import append_audit_event, create_claim
+from policylens.apps.claims.models import Claim, Policy, PolicyHolder
+from policylens.apps.claims.services import append_audit_event, create_claim
 
 
 class Command(BaseCommand):
