@@ -42,7 +42,11 @@ class Command(BaseCommand):
                 holder=holder,
                 policy_number=f"PL-{1000 + i}",
                 product_type=rng.choice(
-                    ["Home Insurance", "Motor Insurance", "Travel Insurance"]
+                    [
+                        "Home Insurance",
+                        "Motor Insurance",
+                        "Travel Insurance",
+                    ]
                 ),
                 status=Policy.Status.ACTIVE,
                 effective_date=date(2024, 1, 1),
@@ -50,15 +54,15 @@ class Command(BaseCommand):
             policies.append(policy)
 
         created_claims = []
-        for i in range(10):
+        for _ in range(10):
             policy = rng.choice(policies)
-            claim_type = rng.choice(
-                [Claim.Type.CLAIM, Claim.Type.POLICY_CHANGE]
-            )
+            claim_type = rng.choice([Claim.Type.CLAIM, Claim.Type.POLICY_CHANGE])
             priority = rng.choice(
-                [Claim.Priority.LOW,
-                 Claim.Priority.NORMAL,
-                 Claim.Priority.HIGH]
+                [
+                    Claim.Priority.LOW,
+                    Claim.Priority.NORMAL,
+                    Claim.Priority.HIGH,
+                ]
             )
             summary = rng.choice(
                 [
