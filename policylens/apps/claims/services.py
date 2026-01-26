@@ -13,7 +13,7 @@ from typing import Any
 from django.core.files.base import File
 from django.db import transaction
 
-from apps.claims.models import (
+from policylens.apps.claims.models import (
     AuditEvent,
     Claim,
     ClaimDocument,

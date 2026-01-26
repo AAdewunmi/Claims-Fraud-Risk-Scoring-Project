@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from django.db import migrations, models
 import django.db.models.deletion
-import apps.claims.models
+import policylens.apps.claims.models
 
 
 class Migration(migrations.Migration):
@@ -15,7 +15,10 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="claimdocument",
             name="file",
-            field=models.FileField(default="", upload_to=apps.claims.models.claim_document_upload_to),
+            field=models.FileField(
+                default="",
+                upload_to=policylens.apps.claims.models.claim_document_upload_to,
+            ),
             preserve_default=False,
         ),
         migrations.AddField(

@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     # Local apps
-    "apps.claims",
+    "policylens.apps.claims",
 ]
 
 MIDDLEWARE = [
@@ -58,7 +58,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "config.urls"
+ROOT_URLCONF = "policylens.config.urls"
 
 TEMPLATES = [
     {
@@ -77,8 +77,8 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "config.wsgi.application"
-ASGI_APPLICATION = "config.asgi.application"
+WSGI_APPLICATION = "policylens.config.wsgi.application"
+ASGI_APPLICATION = "policylens.config.asgi.application"
 
 DATABASES = {
     "default": env.db(),
