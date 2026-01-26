@@ -23,18 +23,17 @@ env = environ.Env(
     DATABASE_URL=(str, ""),
 )
 
-env_file = BASE_DIR.parent / ".env"
-if env_file.exists():
-    environ.Env.read_env(env_file)
-
-# SECURITY WARNING: keep the secret key used in production secret.
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
-    raise RuntimeError("DJANGO_SECRET_KEY is required. Set it in .env or environment " "variables.")
+    raise RuntimeError(
+        "DJANGO_SECRET_KEY is required. Set it in .env "
+        "or environment variables."
+    )
 
 DEBUG = env("DJANGO_DEBUG")
 
-ALLOWED_HOSTS = [host.strip() for host in env("DJANGO_ALLOWED_HOSTS").split(",") if host.strip()]
+ALLOWED_HOSTS = [h.strip()
+                 for h in env("DJANGO_ALLOWED_HOSTS").split(",") if h.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -46,7 +45,7 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     # Local apps
-    "policylens.apps.claims",
+    "apps.claims",
 ]
 
 MIDDLEWARE = [
@@ -59,7 +58,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "policylens.config.urls"
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
@@ -78,8 +77,8 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "policylens.config.wsgi.application"
-ASGI_APPLICATION = "policylens.config.asgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
     "default": env.db(),
@@ -87,15 +86,29 @@ DATABASES = {
 DATABASES["default"]["CONN_MAX_AGE"] = 60
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": ("django.contrib.auth.password_validation." "UserAttributeSimilarityValidator")},
     {
-        "NAME": ("django.contrib.auth.password_validation." "MinimumLengthValidator"),
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
     },
     {
-        "NAME": ("django.contrib.auth.password_validation." "CommonPasswordValidator"),
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "MinimumLengthValidator"
+        ),
     },
     {
-        "NAME": ("django.contrib.auth.password_validation." "NumericPasswordValidator"),
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "CommonPasswordValidator"
+        ),
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator"
+        ),
     },
 ]
 
@@ -107,11 +120,18 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# File storage for Week 2 document uploads.
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR.parent / "media"
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ],
+    # Week 2 switches API endpoints to authenticated
+    # by default in Wednesday's lab.
+    # Until then, individual endpoints will be tightened as permissions land.
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
     ],
