@@ -64,3 +64,28 @@ def test_add_document_creates_document_and_audit_event():
     assert doc.pk is not None
     assert doc.size_bytes == 5
     assert AuditEvent.objects.filter(claim=claim, event_type="DOCUMENT_UPLOADED").exists()
+
+
+@pytest.mark.django_db
+def test_add_decision_moves_claim_to_decided_for_approve():
+    """Approve should set claim status to DECIDED and append DECISION_RECORDED evidence."""
+    policy = PolicyFactory()
+    claim = services.create_claim(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.NORMAL,
+        summary="Triage started.",
+        actor="reviewer-1",
+    )
+
+    decision = services.add_decision(
+        claim=claim,
+        decision=ReviewDecision.Decision.APPROVE,
+        notes="Sufficient evidence.",
+        actor="reviewer-1",
+    )
+
+    claim.refresh_from_db()
+    assert decision.pk is not None
+    assert claim.status == Claim.Status.DECIDED
+    assert AuditEvent.objects.filter(claim=claim, event_type="DECISION_RECORDED").exists()
