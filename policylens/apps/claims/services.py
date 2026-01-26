@@ -30,7 +30,9 @@ class DomainRuleViolation(Exception):
     """
 
 
-def append_audit_event(*, claim: Claim, event_type: str, actor: str, payload: dict[str, Any]) -> AuditEvent:
+def append_audit_event(
+    *, claim: Claim, event_type: str, actor: str, payload: dict[str, Any]
+) -> AuditEvent:
     """Append an audit event for a claim."""
     return AuditEvent.objects.create(
         claim=claim,
@@ -75,7 +77,9 @@ def create_claim(
 def _assert_claim_not_decided(*, claim: Claim) -> None:
     """Prevent mutations that should not happen after a final decision."""
     if claim.status == Claim.Status.DECIDED:
-        raise DomainRuleViolation("Claim is already decided. No further workflow actions are allowed.")
+        raise DomainRuleViolation(
+            "Claim is already decided. No further workflow actions are allowed."
+        )
 
 
 @transaction.atomic
@@ -120,7 +124,11 @@ def add_note(*, claim: Claim, body: str, actor: str) -> InternalNote:
     if not body or not body.strip():
         raise DomainRuleViolation("Note body is required.")
 
-    note = InternalNote.objects.create(claim=claim, body=body.strip(), created_by=actor)
+    note = InternalNote.objects.create(
+        claim=claim,
+        body=body.strip(),
+        created_by=actor,
+    )
 
     append_audit_event(
         claim=claim,
