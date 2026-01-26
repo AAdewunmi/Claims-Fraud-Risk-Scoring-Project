@@ -8,9 +8,10 @@ These tests assert behaviour that must remain stable across API and UI layers.
 from __future__ import annotations
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from policylens.apps.claims import services
-from policylens.apps.claims.models import AuditEvent, Claim
+from policylens.apps.claims.models import AuditEvent, Claim, ReviewDecision
 from tests.factories import PolicyFactory
 
 
@@ -37,3 +38,29 @@ def test_create_claim_appends_audit_event():
     assert event.payload["policy_number"] == "PL-0001"
     assert event.payload["claim_type"] == Claim.Type.CLAIM
     assert event.payload["priority"] == Claim.Priority.NORMAL
+
+
+@pytest.mark.django_db
+def test_add_document_creates_document_and_audit_event():
+    """Adding a document should persist ClaimDocument and append DOCUMENT_UPLOADED evidence."""
+    policy = PolicyFactory()
+    claim = services.create_claim(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.NORMAL,
+        summary="Initial submission.",
+        actor="reviewer-1",
+    )
+
+    uploaded = SimpleUploadedFile("evidence.txt", b"hello", content_type="text/plain")
+    doc = services.add_document(
+        claim=claim,
+        uploaded_file=uploaded,
+        original_filename="evidence.txt",
+        content_type="text/plain",
+        actor="reviewer-1",
+    )
+
+    assert doc.pk is not None
+    assert doc.size_bytes == 5
+    assert AuditEvent.objects.filter(claim=claim, event_type="DOCUMENT_UPLOADED").exists()
