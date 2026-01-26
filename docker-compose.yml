@@ -23,7 +23,8 @@ services:
     env_file:
       - .env
     volumes:
-      - ./:/app
+      - ./policylens:/app/policylens
+      - ./media:/app/media
     ports:
       - "8000:8000"
     depends_on:
@@ -31,8 +32,8 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-      python manage.py migrate --noinput &&
-      python manage.py runserver 0.0.0.0:8000
+      python policylens/manage.py migrate --noinput &&
+      python policylens/manage.py runserver 0.0.0.0:8000
       "
 
 volumes:

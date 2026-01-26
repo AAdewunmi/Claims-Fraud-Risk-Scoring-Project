@@ -104,7 +104,8 @@ Exact paths may change as the lab progresses.
 3. Run migrations:
    - docker compose exec web python manage.py migrate --noinput
 4. Seed sample data
-   - docker compose exec web python policylens/manage.py seed_sample_data
+   - docker compose exec web python manage.py seed_sample_data
+   - Note: seeding is deterministic and safe to re-run for demos.
 5. Create demo users:
    - docker compose exec web python manage.py create_demo_users
 6. Open:
