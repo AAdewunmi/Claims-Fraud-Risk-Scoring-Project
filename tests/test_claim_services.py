@@ -89,3 +89,34 @@ def test_add_decision_moves_claim_to_decided_for_approve():
     assert decision.pk is not None
     assert claim.status == Claim.Status.DECIDED
     assert AuditEvent.objects.filter(claim=claim, event_type="DECISION_RECORDED").exists()
+
+
+@pytest.mark.django_db
+def test_add_decision_blocks_second_decision_after_finalisation():
+    """Once a claim is decided, further decisions should be blocked."""
+    policy = PolicyFactory()
+    claim = services.create_claim(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.NORMAL,
+        summary="Ready to decide.",
+        actor="reviewer-1",
+    )
+
+    services.add_decision(
+        claim=claim,
+        decision=ReviewDecision.Decision.REJECT,
+        notes="Rejected.",
+        actor="reviewer-1",
+    )
+
+    claim.refresh_from_db()
+    assert claim.status == Claim.Status.DECIDED
+
+    with pytest.raises(services.DomainRuleViolation):
+        services.add_decision(
+            claim=claim,
+            decision=ReviewDecision.Decision.REQUEST_INFO,
+            notes="Too late.",
+            actor="reviewer-1",
+        )
