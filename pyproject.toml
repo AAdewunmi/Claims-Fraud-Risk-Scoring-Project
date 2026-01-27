@@ -22,4 +22,4 @@ select = ["E", "F", "I", "B", "UP"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["config", "apps", "tests"]
+known-first-party = ["policylens", "config", "apps", "tests"]

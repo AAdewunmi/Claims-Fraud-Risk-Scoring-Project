@@ -7,10 +7,10 @@ Week 2 adds end-to-end workflow tests across nested endpoints.
 
 from __future__ import annotations
 
+import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
-import pytest
 
 from policylens.apps.claims.models import AuditEvent, Claim, ReviewDecision
 from tests.factories import ClaimFactory, PolicyFactory
