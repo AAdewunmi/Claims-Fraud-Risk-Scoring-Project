@@ -6,7 +6,11 @@ from __future__ import annotations
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView, ListCreateAPIView, RetrieveAPIView
+from rest_framework.generics import (
+    CreateAPIView,
+    ListCreateAPIView,
+    RetrieveAPIView,
+)
 from rest_framework.parsers import FormParser, MultiPartParser
 
 from policylens.apps.claims import services
@@ -20,7 +24,12 @@ from policylens.apps.claims.api.serializers import (
     ReviewDecisionCreateSerializer,
     ReviewDecisionSerializer,
 )
-from policylens.apps.claims.models import Claim, ClaimDocument, InternalNote, ReviewDecision
+from policylens.apps.claims.models import (
+    Claim,
+    ClaimDocument,
+    InternalNote,
+    ReviewDecision,
+)
 
 
 def _actor_from_request(request) -> str:
@@ -116,9 +125,7 @@ class ClaimDocumentUploadAPIView(CreateAPIView):
         response = super().create(request, *args, **kwargs)
         doc: ClaimDocument | None = getattr(self, "created_object", None)
         if doc is not None:
-            response.data = ClaimDocumentSerializer(
-                doc, context=self.get_serializer_context()
-            ).data
+            response.data = ClaimDocumentSerializer(doc, context=self.get_serializer_context()).data
         return response
 
 

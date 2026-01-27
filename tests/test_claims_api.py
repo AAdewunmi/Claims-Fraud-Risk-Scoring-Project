@@ -7,14 +7,13 @@ Week 2 adds end-to-end workflow tests across nested endpoints.
 
 from __future__ import annotations
 
-import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+import pytest
 
 from policylens.apps.claims.models import AuditEvent, Claim, ReviewDecision
 from tests.factories import ClaimFactory, PolicyFactory
-
 
 User = get_user_model()
 
@@ -129,7 +128,11 @@ def test_end_to_end_claim_workflow_create_upload_note_decide(api_client):
 
     # Upload document
     doc_url = reverse("claims-documents-create", kwargs={"claim_id": claim_id})
-    uploaded = SimpleUploadedFile("photo.jpg", b"binarydata", content_type="image/jpeg")
+    uploaded = SimpleUploadedFile(
+        "photo.jpg",
+        b"binarydata",
+        content_type="image/jpeg",
+    )
     doc_payload = {
         "file": uploaded,
         "original_filename": "photo.jpg",
@@ -164,15 +167,7 @@ def test_end_to_end_claim_workflow_create_upload_note_decide(api_client):
     assert detail_resp.json()["status"] == Claim.Status.DECIDED
 
     # Assert evidence exists
-    assert AuditEvent.objects.filter(
-        claim_id=claim_id, event_type="CLAIM_CREATED"
-    ).exists()
-    assert AuditEvent.objects.filter(
-        claim_id=claim_id, event_type="DOCUMENT_UPLOADED"
-    ).exists()
-    assert AuditEvent.objects.filter(
-        claim_id=claim_id, event_type="NOTE_ADDED"
-    ).exists()
-    assert AuditEvent.objects.filter(
-        claim_id=claim_id, event_type="DECISION_RECORDED"
-    ).exists()
+    assert AuditEvent.objects.filter(claim_id=claim_id, event_type="CLAIM_CREATED").exists()
+    assert AuditEvent.objects.filter(claim_id=claim_id, event_type="DOCUMENT_UPLOADED").exists()
+    assert AuditEvent.objects.filter(claim_id=claim_id, event_type="NOTE_ADDED").exists()
+    assert AuditEvent.objects.filter(claim_id=claim_id, event_type="DECISION_RECORDED").exists()

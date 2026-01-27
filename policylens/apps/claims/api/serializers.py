@@ -14,7 +14,13 @@ from __future__ import annotations
 from rest_framework import serializers
 
 from policylens.apps.claims import services
-from policylens.apps.claims.models import Claim, ClaimDocument, InternalNote, Policy, ReviewDecision
+from policylens.apps.claims.models import (
+    Claim,
+    ClaimDocument,
+    InternalNote,
+    Policy,
+    ReviewDecision,
+)
 
 
 class ClaimSerializer(serializers.ModelSerializer):
@@ -106,7 +112,9 @@ class ClaimDocumentUploadSerializer(serializers.Serializer):
         actor = str(self.context.get("actor") or "system")
         uploaded_file = validated_data["file"]
         original_filename = validated_data["original_filename"]
-        content_type = validated_data.get("content_type") or getattr(uploaded_file, "content_type", "") or ""
+        content_type = (
+            validated_data.get("content_type") or getattr(uploaded_file, "content_type", "") or ""
+        )
 
         return services.add_document(
             claim=claim,
@@ -143,7 +151,11 @@ class InternalNoteCreateSerializer(serializers.Serializer):
         """Create note via domain service."""
         claim: Claim = self.context["claim"]
         actor = str(self.context.get("actor") or "system")
-        return services.add_note(claim=claim, body=validated_data["body"], actor=actor)
+        return services.add_note(
+            claim=claim,
+            body=validated_data["body"],
+            actor=actor,
+        )
 
 
 class InternalNoteSerializer(serializers.ModelSerializer):
