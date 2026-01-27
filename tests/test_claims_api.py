@@ -2,18 +2,21 @@
 """
 Integration tests for the canonical claim API contract.
 
-These tests hit the database and
-validate the contract shape and persistence effects.
+Week 2 adds end-to-end workflow tests across nested endpoints.
 """
 
 from __future__ import annotations
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
-from policylens.apps.claims.models import AuditEvent, Claim
+from policylens.apps.claims.models import AuditEvent, Claim, ReviewDecision
 from tests.factories import ClaimFactory, PolicyFactory
+
+
+User = get_user_model()
 
 
 @pytest.mark.django_db
@@ -48,7 +51,6 @@ def test_post_claim_creates_claim_and_audit_event(api_client):
 @pytest.mark.django_db
 def test_post_claim_sets_created_by_and_audit_actor_from_authenticated_user(api_client):
     """Authenticated POST /api/claims/ uses username as actor and persists evidence."""
-    User = get_user_model()
     user = User.objects.create_user(username="reviewer-1", password="password123")
 
     api_client.force_authenticate(user=user)
@@ -103,3 +105,74 @@ def test_get_claims_filters_by_status_and_priority(api_client):
     assert len(results) == 1
     assert results[0]["status"] == Claim.Status.IN_REVIEW
     assert results[0]["priority"] == Claim.Priority.NORMAL
+
+
+@pytest.mark.django_db
+def test_end_to_end_claim_workflow_create_upload_note_decide(api_client):
+    """Full workflow: create claim, upload document, add note, record decision, assert evidence."""
+    user = User.objects.create_user(username="reviewer1", password="password123")
+    api_client.force_authenticate(user=user)
+
+    policy = PolicyFactory(policy_number="PL-2001")
+
+    # Create claim
+    create_url = reverse("claims-list-create")
+    create_payload = {
+        "policy_id": policy.pk,
+        "claim_type": Claim.Type.CLAIM,
+        "priority": Claim.Priority.HIGH,
+        "summary": "Storm damage claim.",
+    }
+    create_resp = api_client.post(create_url, data=create_payload, format="json")
+    assert create_resp.status_code == 201, create_resp.content
+    claim_id = create_resp.json()["id"]
+
+    # Upload document
+    doc_url = reverse("claims-documents-create", kwargs={"claim_id": claim_id})
+    uploaded = SimpleUploadedFile("photo.jpg", b"binarydata", content_type="image/jpeg")
+    doc_payload = {
+        "file": uploaded,
+        "original_filename": "photo.jpg",
+        "content_type": "image/jpeg",
+    }
+    doc_resp = api_client.post(doc_url, data=doc_payload, format="multipart")
+    assert doc_resp.status_code == 201, doc_resp.content
+
+    # Add note
+    note_url = reverse("claims-notes-create", kwargs={"claim_id": claim_id})
+    note_resp = api_client.post(
+        note_url, data={"body": "Reviewed initial evidence."}, format="json"
+    )
+    assert note_resp.status_code == 201, note_resp.content
+
+    # Record decision
+    decision_url = reverse("claims-decisions-create", kwargs={"claim_id": claim_id})
+    decision_resp = api_client.post(
+        decision_url,
+        data={
+            "decision": ReviewDecision.Decision.APPROVE,
+            "notes": "Sufficient evidence.",
+        },
+        format="json",
+    )
+    assert decision_resp.status_code == 201, decision_resp.content
+
+    # Assert claim status moved to DECIDED
+    detail_url = reverse("claims-retrieve", kwargs={"claim_id": claim_id})
+    detail_resp = api_client.get(detail_url)
+    assert detail_resp.status_code == 200
+    assert detail_resp.json()["status"] == Claim.Status.DECIDED
+
+    # Assert evidence exists
+    assert AuditEvent.objects.filter(
+        claim_id=claim_id, event_type="CLAIM_CREATED"
+    ).exists()
+    assert AuditEvent.objects.filter(
+        claim_id=claim_id, event_type="DOCUMENT_UPLOADED"
+    ).exists()
+    assert AuditEvent.objects.filter(
+        claim_id=claim_id, event_type="NOTE_ADDED"
+    ).exists()
+    assert AuditEvent.objects.filter(
+        claim_id=claim_id, event_type="DECISION_RECORDED"
+    ).exists()
