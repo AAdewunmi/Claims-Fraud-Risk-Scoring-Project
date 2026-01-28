@@ -59,7 +59,6 @@ ROOT_URLCONF = "policylens.config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # Server-rendered UI arrives in week 5.
         "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -96,7 +95,6 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# File storage for Week 2 document uploads.
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR.parent / "media"
 
@@ -105,10 +103,8 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ],
-    # Week 2 switches API endpoints to authenticated
-    # by default in Wednesday's lab.
-    # Until then, individual endpoints will be tightened as permissions land.
+    # Week 2: core workflow API is authenticated by default.
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ],
 }

@@ -31,3 +31,5 @@ htmlcov/
 # OS
 .DS_Store
 
+# VSCODE
+.vscode
