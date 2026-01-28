@@ -104,7 +104,7 @@ class ClaimDocumentUploadAPIView(CreateAPIView):
         try:
             self.created_object = serializer.save()
         except services.DomainRuleViolation as exc:
-            serializer.error_messages.setdefault("invalid", "{message}")
+            serializer.error_messages["invalid"] = "{message}"
             serializer.fail("invalid", message=str(exc))
 
     def create(self, request, *args, **kwargs):
@@ -136,7 +136,7 @@ class ClaimNoteCreateAPIView(CreateAPIView):
         try:
             self.created_object = serializer.save()
         except services.DomainRuleViolation as exc:
-            serializer.error_messages.setdefault("invalid", "{message}")
+            serializer.error_messages["invalid"] = "{message}"
             serializer.fail("invalid", message=str(exc))
 
     def create(self, request, *args, **kwargs):
@@ -171,7 +171,7 @@ class ClaimDecisionCreateAPIView(CreateAPIView):
         try:
             self.created_object = serializer.save()
         except services.DomainRuleViolation as exc:
-            serializer.error_messages.setdefault("invalid", "{message}")
+            serializer.error_messages["invalid"] = "{message}"
             serializer.fail("invalid", message=str(exc))
 
     def create(self, request, *args, **kwargs):
