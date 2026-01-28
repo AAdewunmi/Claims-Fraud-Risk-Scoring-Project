@@ -2,6 +2,10 @@
 """
 Seed deterministic sample data for local development.
 
+Week 2 adds:
+- Default reviewer and admin groups
+- Sample users assigned to those roles
+
 This command is designed for repeatable demos and for week 5 UI development.
 """
 
@@ -10,11 +14,15 @@ from __future__ import annotations
 import random
 from datetime import date
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from policylens.apps.claims.models import Claim, Policy, PolicyHolder
-from policylens.apps.claims.services import append_audit_event, create_claim
+from policylens.apps.claims.models import Claim, Policy, PolicyHolder, ReviewDecision
+from policylens.apps.claims.services import add_decision, add_note, create_claim
+
+User = get_user_model()
 
 
 class Command(BaseCommand):
@@ -26,6 +34,19 @@ class Command(BaseCommand):
     def handle(self, *args, **options) -> None:
         """Run the seed workflow."""
         rng = random.Random(42)
+
+        reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
+        admin_group, _ = Group.objects.get_or_create(name="admin")
+
+        reviewer, _ = User.objects.get_or_create(username="reviewer1")
+        reviewer.set_password("password123")
+        reviewer.save()
+        reviewer.groups.add(reviewer_group)
+
+        admin, _ = User.objects.get_or_create(username="admin1", is_staff=True, is_superuser=False)
+        admin.set_password("password123")
+        admin.save()
+        admin.groups.add(admin_group)
 
         holders = []
         for i in range(5):
@@ -82,20 +103,19 @@ class Command(BaseCommand):
             )
             created_claims.append(claim)
 
-        # Add one extra event for realism
+        # Add a few notes and one decision for realism.
         for claim in created_claims[:3]:
-            append_audit_event(
-                claim=claim,
-                event_type="NOTE_ADDED",
-                actor="seed",
-                payload={"note": "Seeded note for timeline realism."},
-            )
+            add_note(claim=claim, body="Seeded note for timeline realism.", actor=reviewer.username)
+
+        add_decision(
+            claim=created_claims[0],
+            decision=ReviewDecision.Decision.REQUEST_INFO,
+            notes="Seeded request for more info.",
+            actor=reviewer.username,
+        )
 
         self.stdout.write(
             self.style.SUCCESS(
-                "Seeded "
-                f"{len(holders)} holders, "
-                f"{len(policies)} policies, "
-                f"{len(created_claims)} claims."
+                "Seeded roles (reviewer, admin), users (reviewer1/admin1), holders, policies, claims."
             )
         )
