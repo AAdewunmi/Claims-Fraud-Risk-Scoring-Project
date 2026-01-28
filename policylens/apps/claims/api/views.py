@@ -5,15 +5,12 @@ from __future__ import annotations
 
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError
-from rest_framework.generics import (
-    CreateAPIView,
-    ListCreateAPIView,
-    RetrieveAPIView,
-)
+from rest_framework.generics import CreateAPIView, ListCreateAPIView, RetrieveAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 
 from policylens.apps.claims import services
+from policylens.apps.claims.permissions import IsReviewerOrAdmin
 from policylens.apps.claims.api.serializers import (
     ClaimDetailSerializer,
     ClaimDocumentSerializer,
@@ -41,14 +38,10 @@ def _actor_from_request(request) -> str:
 
 
 class ClaimListCreateAPIView(ListCreateAPIView):
-    """List and create claims.
-
-    Contract:
-    - GET /api/claims/?status=&priority=
-    - POST /api/claims/
-    """
+    """List and create claims."""
 
     serializer_class = ClaimSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Return queryset filtered by the canonical query parameters."""
@@ -71,14 +64,11 @@ class ClaimListCreateAPIView(ListCreateAPIView):
 
 
 class ClaimRetrieveAPIView(RetrieveAPIView):
-    """Retrieve claim detail.
-
-    Contract:
-    - GET /api/claims/{id}/
-    """
+    """Retrieve claim detail."""
 
     serializer_class = ClaimDetailSerializer
     lookup_url_kwarg = "claim_id"
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Annotate counts used by ops views."""
@@ -94,14 +84,11 @@ class ClaimRetrieveAPIView(RetrieveAPIView):
 
 
 class ClaimDocumentUploadAPIView(CreateAPIView):
-    """Upload a document for a claim.
-
-    Contract:
-    - POST /api/claims/{id}/documents/
-    """
+    """Upload a document for a claim."""
 
     serializer_class = ClaimDocumentUploadSerializer
     parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
     lookup_url_kwarg = "claim_id"
 
     def get_serializer_context(self):
@@ -117,8 +104,8 @@ class ClaimDocumentUploadAPIView(CreateAPIView):
         try:
             self.created_object = serializer.save()
         except services.DomainRuleViolation as exc:
-            # Convert domain rule errors into 400 responses for now.
-            raise ValidationError({"detail": str(exc)}) from exc
+            serializer.error_messages.setdefault("invalid", "{message}")
+            serializer.fail("invalid", message=str(exc))
 
     def create(self, request, *args, **kwargs):
         """Return the created document in a stable read contract."""
@@ -130,13 +117,10 @@ class ClaimDocumentUploadAPIView(CreateAPIView):
 
 
 class ClaimNoteCreateAPIView(CreateAPIView):
-    """Create an internal note for a claim.
-
-    Contract:
-    - POST /api/claims/{id}/notes/
-    """
+    """Create an internal note for a claim."""
 
     serializer_class = InternalNoteCreateSerializer
+    permission_classes = [IsAuthenticated]
     lookup_url_kwarg = "claim_id"
 
     def get_serializer_context(self):
@@ -152,7 +136,8 @@ class ClaimNoteCreateAPIView(CreateAPIView):
         try:
             self.created_object = serializer.save()
         except services.DomainRuleViolation as exc:
-            raise ValidationError({"detail": str(exc)}) from exc
+            serializer.error_messages.setdefault("invalid", "{message}")
+            serializer.fail("invalid", message=str(exc))
 
     def create(self, request, *args, **kwargs):
         """Return created note using the read contract."""
@@ -166,11 +151,11 @@ class ClaimNoteCreateAPIView(CreateAPIView):
 class ClaimDecisionCreateAPIView(CreateAPIView):
     """Record a decision for a claim.
 
-    Contract:
-    - POST /api/claims/{id}/decisions/
+    Decisions are restricted to reviewer or admin roles.
     """
 
     serializer_class = ReviewDecisionCreateSerializer
+    permission_classes = [IsAuthenticated, IsReviewerOrAdmin]
     lookup_url_kwarg = "claim_id"
 
     def get_serializer_context(self):
@@ -186,7 +171,8 @@ class ClaimDecisionCreateAPIView(CreateAPIView):
         try:
             self.created_object = serializer.save()
         except services.DomainRuleViolation as exc:
-            raise ValidationError({"detail": str(exc)}) from exc
+            serializer.error_messages.setdefault("invalid", "{message}")
+            serializer.fail("invalid", message=str(exc))
 
     def create(self, request, *args, **kwargs):
         """Return created decision using the read contract."""
