@@ -100,8 +100,8 @@ MEDIA_ROOT = BASE_DIR.parent / "media"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
     # Week 2: core workflow API is authenticated by default.
     "DEFAULT_PERMISSION_CLASSES": [
