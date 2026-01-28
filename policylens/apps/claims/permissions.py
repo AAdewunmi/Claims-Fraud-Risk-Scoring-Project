@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from rest_framework.permissions import BasePermission
 
-
 ROLE_REVIEWER = "reviewer"
 ROLE_ADMIN = "admin"
 

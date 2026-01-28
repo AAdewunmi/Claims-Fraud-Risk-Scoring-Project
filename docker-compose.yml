@@ -24,6 +24,7 @@ services:
       - .env
     volumes:
       - ./policylens:/app/policylens
+      - ./tests:/app/tests
       - ./media:/app/media
     ports:
       - "8000:8000"

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
@@ -21,6 +22,9 @@ User = get_user_model()
 @pytest.mark.django_db
 def test_post_claim_creates_claim_and_audit_event(api_client):
     """POST /api/claims/ persists a claim and appends a CLAIM_CREATED audit event."""
+    user = User.objects.create_user(username="basic-1", password="password123")
+    api_client.force_authenticate(user=user)
+
     policy = PolicyFactory(policy_number="PL-7777")
     url = reverse("claims-list-create")
 
@@ -84,6 +88,9 @@ def test_post_claim_sets_created_by_and_audit_actor_from_authenticated_user(api_
 @pytest.mark.django_db
 def test_get_claims_filters_by_status_and_priority(api_client):
     """GET /api/claims/?status=&priority= filters deterministically."""
+    user = User.objects.create_user(username="basic-2", password="password123")
+    api_client.force_authenticate(user=user)
+
     ClaimFactory(status=Claim.Status.NEW, priority=Claim.Priority.NORMAL)
     ClaimFactory(status=Claim.Status.IN_REVIEW, priority=Claim.Priority.HIGH)
     ClaimFactory(status=Claim.Status.IN_REVIEW, priority=Claim.Priority.NORMAL)
@@ -110,6 +117,8 @@ def test_get_claims_filters_by_status_and_priority(api_client):
 def test_end_to_end_claim_workflow_create_upload_note_decide(api_client):
     """Full workflow: create claim, upload document, add note, record decision, assert evidence."""
     user = User.objects.create_user(username="reviewer1", password="password123")
+    reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
+    user.groups.add(reviewer_group)
     api_client.force_authenticate(user=user)
 
     policy = PolicyFactory(policy_number="PL-2001")

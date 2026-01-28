@@ -56,34 +56,32 @@ class Command(BaseCommand):
         holders = []
         for i in range(5):
             email = f"holder{i+1}@example.com"
-            holder = (
-                PolicyHolder.objects.filter(email=email).order_by("pk").first()
-                or PolicyHolder.objects.create(
-                    full_name=f"Sample Holder {i+1}",
-                    email=email,
-                    phone=f"+44 7700 900{i:03d}",
-                )
+            holder = PolicyHolder.objects.filter(email=email).order_by(
+                "pk"
+            ).first() or PolicyHolder.objects.create(
+                full_name=f"Sample Holder {i+1}",
+                email=email,
+                phone=f"+44 7700 900{i:03d}",
             )
             holders.append(holder)
 
         policies = []
         for i, holder in enumerate(holders, start=1):
             policy_number = f"PL-{1000 + i}"
-            policy = (
-                Policy.objects.filter(policy_number=policy_number).order_by("pk").first()
-                or Policy.objects.create(
-                    holder=holder,
-                    policy_number=policy_number,
-                    product_type=rng.choice(
-                        [
-                            "Home Insurance",
-                            "Motor Insurance",
-                            "Travel Insurance",
-                        ]
-                    ),
-                    status=Policy.Status.ACTIVE,
-                    effective_date=date(2024, 1, 1),
-                )
+            policy = Policy.objects.filter(policy_number=policy_number).order_by(
+                "pk"
+            ).first() or Policy.objects.create(
+                holder=holder,
+                policy_number=policy_number,
+                product_type=rng.choice(
+                    [
+                        "Home Insurance",
+                        "Motor Insurance",
+                        "Travel Insurance",
+                    ]
+                ),
+                status=Policy.Status.ACTIVE,
+                effective_date=date(2024, 1, 1),
             )
             policies.append(policy)
 
@@ -154,6 +152,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                "Seeded roles (reviewer, admin), users (reviewer1/admin1), holders, policies, claims."
+                "Seeded roles (reviewer, admin), users (reviewer1/admin1), "
+                "holders, policies, claims."
             )
         )

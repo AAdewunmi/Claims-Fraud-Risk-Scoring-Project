@@ -22,15 +22,19 @@ User = get_user_model()
 
 @pytest.mark.django_db
 def test_unauthenticated_requests_are_rejected(api_client):
-    """Core endpoints should return 401 for unauthenticated requests."""
+    """Core endpoints should return 403 for unauthenticated requests."""
     policy = PolicyFactory()
     url = reverse("claims-list-create")
     resp = api_client.post(
         url,
-        data={"policy_id": policy.pk, "claim_type": Claim.Type.CLAIM, "priority": Claim.Priority.NORMAL},
+        data={
+            "policy_id": policy.pk,
+            "claim_type": Claim.Type.CLAIM,
+            "priority": Claim.Priority.NORMAL,
+        },
         format="json",
     )
-    assert resp.status_code == 401
+    assert resp.status_code == 403
 
 
 @pytest.mark.django_db

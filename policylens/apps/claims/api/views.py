@@ -10,7 +10,6 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 
 from policylens.apps.claims import services
-from policylens.apps.claims.permissions import IsReviewerOrAdmin
 from policylens.apps.claims.api.serializers import (
     ClaimDetailSerializer,
     ClaimDocumentSerializer,
@@ -27,6 +26,7 @@ from policylens.apps.claims.models import (
     InternalNote,
     ReviewDecision,
 )
+from policylens.apps.claims.permissions import IsReviewerOrAdmin
 
 
 def _actor_from_request(request) -> str:
