@@ -14,7 +14,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.urls import reverse
 
-from apps.claims.models import Claim, ReviewDecision
+from policylens.apps.claims.models import Claim, ReviewDecision
 from tests.factories import PolicyFactory
 
 User = get_user_model()
