@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, ListCreateAPIView, RetrieveAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -35,6 +36,11 @@ def _actor_from_request(request) -> str:
     if user and getattr(user, "is_authenticated", False):
         return user.get_username() or str(user.pk)
     return "anonymous"
+
+
+def _domain_error_to_validation_error(exc: services.DomainRuleViolation) -> ValidationError:
+    """Convert domain rule violations into a stable client-facing error response."""
+    return ValidationError({"detail": str(exc)})
 
 
 class ClaimListCreateAPIView(ListCreateAPIView):
@@ -104,8 +110,7 @@ class ClaimDocumentUploadAPIView(CreateAPIView):
         try:
             self.created_object = serializer.save()
         except services.DomainRuleViolation as exc:
-            serializer.error_messages["invalid"] = "{message}"
-            serializer.fail("invalid", message=str(exc))
+            raise _domain_error_to_validation_error(exc) from exc
 
     def create(self, request, *args, **kwargs):
         """Return the created document in a stable read contract."""
@@ -136,8 +141,7 @@ class ClaimNoteCreateAPIView(CreateAPIView):
         try:
             self.created_object = serializer.save()
         except services.DomainRuleViolation as exc:
-            serializer.error_messages["invalid"] = "{message}"
-            serializer.fail("invalid", message=str(exc))
+            raise _domain_error_to_validation_error(exc) from exc
 
     def create(self, request, *args, **kwargs):
         """Return created note using the read contract."""
@@ -171,8 +175,7 @@ class ClaimDecisionCreateAPIView(CreateAPIView):
         try:
             self.created_object = serializer.save()
         except services.DomainRuleViolation as exc:
-            serializer.error_messages["invalid"] = "{message}"
-            serializer.fail("invalid", message=str(exc))
+            raise _domain_error_to_validation_error(exc) from exc
 
     def create(self, request, *args, **kwargs):
         """Return created decision using the read contract."""
