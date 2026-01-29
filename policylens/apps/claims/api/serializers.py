@@ -2,11 +2,7 @@
 """
 Serializers define the canonical API contract.
 
-Week 2 adds nested contracts for:
-- GET /api/claims/{id}/
-- POST /api/claims/{id}/documents/
-- POST /api/claims/{id}/notes/
-- POST /api/claims/{id}/decisions/
+Week 2 adds nested contracts and boundary validation.
 """
 
 from __future__ import annotations
@@ -21,6 +17,9 @@ from policylens.apps.claims.models import (
     Policy,
     ReviewDecision,
 )
+
+ALLOWED_DOCUMENT_CONTENT_TYPES = {"application/pdf", "image/jpeg", "image/png", "text/plain"}
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
 
 class ClaimSerializer(serializers.ModelSerializer):
@@ -106,6 +105,23 @@ class ClaimDocumentUploadSerializer(serializers.Serializer):
     original_filename = serializers.CharField(max_length=255)
     content_type = serializers.CharField(max_length=128, required=False, allow_blank=True)
 
+    def validate(self, attrs):
+        """Validate size and content type deterministically."""
+        uploaded_file = attrs["file"]
+        size_bytes = getattr(uploaded_file, "size", 0) or 0
+        if size_bytes <= 0:
+            raise serializers.ValidationError({"file": "Uploaded file is empty."})
+        if size_bytes > MAX_UPLOAD_BYTES:
+            raise serializers.ValidationError(
+                {"file": f"File exceeds max size of {MAX_UPLOAD_BYTES} bytes."}
+            )
+
+        content_type = attrs.get("content_type") or getattr(uploaded_file, "content_type", "") or ""
+        if content_type and content_type not in ALLOWED_DOCUMENT_CONTENT_TYPES:
+            raise serializers.ValidationError({"content_type": "Unsupported content type."})
+
+        return attrs
+
     def create(self, validated_data):
         """Create document via domain service."""
         claim: Claim = self.context["claim"]
@@ -147,15 +163,17 @@ class InternalNoteCreateSerializer(serializers.Serializer):
 
     body = serializers.CharField()
 
+    def validate_body(self, value: str) -> str:
+        """Ensure note body is non-empty and trimmed."""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Note body is required.")
+        return value.strip()
+
     def create(self, validated_data):
         """Create note via domain service."""
         claim: Claim = self.context["claim"]
         actor = str(self.context.get("actor") or "system")
-        return services.add_note(
-            claim=claim,
-            body=validated_data["body"],
-            actor=actor,
-        )
+        return services.add_note(claim=claim, body=validated_data["body"], actor=actor)
 
 
 class InternalNoteSerializer(serializers.ModelSerializer):
