@@ -46,11 +46,16 @@ def test_document_upload_rejects_unsupported_content_type(api_client):
     uploaded = SimpleUploadedFile("script.exe", b"data", content_type="application/octet-stream")
     resp = api_client.post(
         doc_url,
-        data={"file": uploaded, "original_filename": "script.exe", "content_type": "application/octet-stream"},
+        data={
+            "file": uploaded,
+            "original_filename": "script.exe",
+            "content_type": "application/octet-stream",
+        },
         format="multipart",
     )
     assert resp.status_code == 400
     assert "content_type" in resp.json()
+
 
 @pytest.mark.django_db
 def test_decision_after_decided_returns_400(api_client):
