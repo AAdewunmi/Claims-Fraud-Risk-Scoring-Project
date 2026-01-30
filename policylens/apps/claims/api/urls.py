@@ -10,6 +10,7 @@ from policylens.apps.claims.api.views import (
     ClaimNoteCreateAPIView,
     ClaimRetrieveAPIView,
 )
+from policylens.apps.claims.api.views_audit import ClaimAuditEventListAPIView
 
 urlpatterns = [
     path("claims/", ClaimListCreateAPIView.as_view(), name="claims-list-create"),
@@ -28,5 +29,10 @@ urlpatterns = [
         "claims/<int:claim_id>/decisions/",
         ClaimDecisionCreateAPIView.as_view(),
         name="claims-decisions-create",
+    ),
+    path(
+        "claims/<int:claim_id>/audit-events/",
+        ClaimAuditEventListAPIView.as_view(),
+        name="claims-audit-events",
     ),
 ]
