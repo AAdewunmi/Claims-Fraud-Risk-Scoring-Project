@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from apps.claims.api.serializers_audit import AuditEventSerializer
-from apps.claims.models import AuditEvent, Claim
+from policylens.apps.claims.api.serializers_audit import AuditEventSerializer
+from policylens.apps.claims.models import AuditEvent, Claim
 
 
 class ClaimAuditEventListAPIView(ListAPIView):

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from apps.claims.models import AuditEvent
+from policylens.apps.claims.models import AuditEvent
 
 
 class AuditEventSerializer(serializers.ModelSerializer):
