@@ -10,9 +10,9 @@ from __future__ import annotations
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.claims import sla
-from apps.claims.models import Claim
-from apps.claims.services import append_audit_event
+from policylens.apps.claims import sla
+from policylens.apps.claims.models import Claim
+from policylens.apps.claims.services import append_audit_event
 
 
 class Command(BaseCommand):
