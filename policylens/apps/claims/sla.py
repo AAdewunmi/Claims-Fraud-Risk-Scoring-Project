@@ -56,3 +56,27 @@ def compute_due_at(*, claim: Claim, anchor_time) -> timezone.datetime:
     """
     policy = PRIORITY_TO_SLA_POLICY.get(claim.priority) or PRIORITY_TO_SLA_POLICY[Claim.Priority.NORMAL]
     return anchor_time + policy.due_window
+
+
+@transaction.atomic
+def ensure_sla_clock_exists(*, claim: Claim) -> SlaClock:
+    """Ensure the claim has an SLA clock with a deterministic due_at.
+
+    Uses claim.created_at as the anchor to remain reproducible across environments.
+
+    Args:
+        claim: Claim to ensure SLA clock for.
+
+    Returns:
+        The existing or created SlaClock.
+    """
+    try:
+        return claim.sla_clock
+    except SlaClock.DoesNotExist:
+        anchor = claim.created_at
+        due_at = compute_due_at(claim=claim, anchor_time=anchor)
+        return SlaClock.objects.create(
+            claim=claim,
+            started_at=anchor,
+            due_at=due_at,
+        )
