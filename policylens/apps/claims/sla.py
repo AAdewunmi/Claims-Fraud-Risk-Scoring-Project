@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Iterable
+from collections.abc import Iterable
 
 from django.db import transaction
 from django.utils import timezone
