@@ -3,7 +3,7 @@
 Domain services for claims.
 
 This module centralises business behaviour so that API and UI share the same logic.
-Week 2 adds document upload, internal notes, and decisions.
+Week 3 adds SLA clock creation as part of claim creation.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from typing import Any
 from django.core.files.base import File
 from django.db import transaction
 
+from policylens.apps.claims import sla
 from policylens.apps.claims.models import (
     AuditEvent,
     Claim,
@@ -51,7 +52,7 @@ def create_claim(
     summary: str,
     actor: str,
 ) -> Claim:
-    """Create a claim and append an initial audit event."""
+    """Create a claim, start SLA clock, and append initial audit evidence."""
     claim = Claim.objects.create(
         policy=policy,
         claim_type=claim_type,
@@ -68,6 +69,17 @@ def create_claim(
             "policy_number": policy.policy_number,
             "claim_type": claim_type,
             "priority": priority,
+        },
+    )
+
+    clock = sla.ensure_sla_clock_exists(claim=claim)
+    append_audit_event(
+        claim=claim,
+        event_type="SLA_STARTED",
+        actor=actor,
+        payload={
+            "started_at": clock.started_at.isoformat(),
+            "due_at": clock.due_at.isoformat() if clock.due_at else None,
         },
     )
 
