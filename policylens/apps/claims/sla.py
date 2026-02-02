@@ -19,7 +19,7 @@ from typing import Iterable
 from django.db import transaction
 from django.utils import timezone
 
-from apps.claims.models import Claim, SlaClock
+from policylens.apps.claims.models import Claim, SlaClock
 
 
 @dataclass(frozen=True)
