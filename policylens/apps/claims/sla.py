@@ -42,3 +42,17 @@ PRIORITY_TO_SLA_POLICY: dict[str, SlaPolicy] = {
     Claim.Priority.NORMAL: SlaPolicy(due_window=timedelta(hours=72), due_soon_window=DEFAULT_DUE_SOON_WINDOW),
     Claim.Priority.LOW: SlaPolicy(due_window=timedelta(hours=120), due_soon_window=DEFAULT_DUE_SOON_WINDOW),
 }
+
+
+def compute_due_at(*, claim: Claim, anchor_time) -> timezone.datetime:
+    """Compute SLA due time for a claim.
+
+    Args:
+        claim: Claim to compute due time for.
+        anchor_time: Datetime used as the SLA start anchor, typically claim.created_at.
+
+    Returns:
+        Timezone-aware due_at datetime.
+    """
+    policy = PRIORITY_TO_SLA_POLICY.get(claim.priority) or PRIORITY_TO_SLA_POLICY[Claim.Priority.NORMAL]
+    return anchor_time + policy.due_window
