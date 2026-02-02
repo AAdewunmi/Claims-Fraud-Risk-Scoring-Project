@@ -12,9 +12,9 @@ Week 3 scope:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import timedelta
-from collections.abc import Iterable
 
 from django.db import transaction
 from django.utils import timezone
