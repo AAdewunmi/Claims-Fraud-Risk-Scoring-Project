@@ -75,11 +75,15 @@ def ensure_sla_clock_exists(*, claim: Claim) -> SlaClock:
     except SlaClock.DoesNotExist:
         anchor = claim.created_at
         due_at = compute_due_at(claim=claim, anchor_time=anchor)
-        return SlaClock.objects.create(
+        clock = SlaClock.objects.create(
             claim=claim,
             started_at=anchor,
             due_at=due_at,
         )
+        if clock.started_at != anchor or clock.due_at != due_at:
+            SlaClock.objects.filter(pk=clock.pk).update(started_at=anchor, due_at=due_at)
+            clock.refresh_from_db(fields=["started_at", "due_at"])
+        return clock
 
 
 def find_breached_clocks(*, now) -> Iterable[SlaClock]:
