@@ -80,3 +80,20 @@ def ensure_sla_clock_exists(*, claim: Claim) -> SlaClock:
             started_at=anchor,
             due_at=due_at,
         )
+
+
+def find_breached_clocks(*, now) -> Iterable[SlaClock]:
+    """Return clocks that are currently breached and not yet marked.
+
+    Args:
+        now: Current time.
+
+    Returns:
+        Iterable of SlaClock objects.
+    """
+    return (
+        SlaClock.objects.select_related("claim")
+        .filter(breached_at__isnull=True, due_at__isnull=False, due_at__lt=now)
+        .exclude(claim__status=Claim.Status.DECIDED)
+        .order_by("due_at")
+    )
