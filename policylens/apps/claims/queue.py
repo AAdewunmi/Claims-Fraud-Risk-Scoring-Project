@@ -42,3 +42,59 @@ def _priority_weight_case() -> Case:
         default=Value(PRIORITY_WEIGHT[Claim.Priority.NORMAL]),
         output_field=IntegerField(),
     )
+
+
+def build_queue_queryset(*, now=None, status: str | None, priority: str | None, sla_filter: str | None):
+    """Build a queryset for the ops review queue.
+
+    Args:
+        now: Optional override for deterministic testing.
+        status: Optional claim status filter.
+        priority: Optional priority filter.
+        sla_filter: Optional SLA filter: breached, due_soon, ok.
+
+    Returns:
+        Queryset ordered by operational priority.
+    """
+    now = now or timezone.now()
+    due_soon_cutoff = now + DUE_SOON_WINDOW
+
+    qs = (
+        Claim.objects.select_related("policy", "sla_clock")
+        .filter(status__in=[Claim.Status.NEW, Claim.Status.IN_REVIEW])
+        .annotate(
+            priority_weight=_priority_weight_case(),
+            is_breached=Case(
+                When(
+                    Q(sla_clock__due_at__isnull=False) & Q(sla_clock__due_at__lt=now),
+                    then=Value(1),
+                ),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+            is_due_soon=Case(
+                When(
+                    Q(sla_clock__due_at__isnull=False)
+                    & Q(sla_clock__due_at__gte=now)
+                    & Q(sla_clock__due_at__lte=due_soon_cutoff),
+                    then=Value(1),
+                ),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+        )
+    )
+
+    if status:
+        qs = qs.filter(status=status)
+    if priority:
+        qs = qs.filter(priority=priority)
+
+    if sla_filter == "breached":
+        qs = qs.filter(is_breached=1)
+    elif sla_filter == "due_soon":
+        qs = qs.filter(is_breached=0, is_due_soon=1)
+    elif sla_filter == "ok":
+        qs = qs.filter(is_breached=0, is_due_soon=0)
+
+    return qs.order_by("-is_breached", "-is_due_soon", "-priority_weight", "created_at")
