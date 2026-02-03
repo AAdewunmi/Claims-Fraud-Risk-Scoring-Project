@@ -7,9 +7,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from apps.claims.api.serializers_queue import QueueClaimSerializer
-from apps.claims.models import Claim
-from apps.claims.queue import build_queue_queryset
+from policylens.apps.claims.api.serializers_queue import QueueClaimSerializer
+from policylens.apps.claims.models import Claim
+from policylens.apps.claims.queue import build_queue_queryset
 
 
 VALID_SLA_FILTERS = {None, "breached", "due_soon", "ok"}

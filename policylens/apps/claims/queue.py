@@ -21,7 +21,7 @@ from datetime import timedelta
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.utils import timezone
 
-from apps.claims.models import Claim
+from policylens.apps.claims.models import Claim
 
 
 DUE_SOON_WINDOW = timedelta(hours=6)

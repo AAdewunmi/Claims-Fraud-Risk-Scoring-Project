@@ -10,7 +10,7 @@ from __future__ import annotations
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.claims.models import Claim
+from policylens.apps.claims.models import Claim
 
 
 class QueueClaimSerializer(serializers.ModelSerializer):

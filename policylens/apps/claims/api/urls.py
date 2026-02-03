@@ -11,6 +11,7 @@ from policylens.apps.claims.api.views import (
     ClaimRetrieveAPIView,
 )
 from policylens.apps.claims.api.views_audit import ClaimAuditEventListAPIView
+from policylens.apps.claims.api.views_queue import QueueClaimListAPIView
 
 urlpatterns = [
     path("claims/", ClaimListCreateAPIView.as_view(), name="claims-list-create"),
@@ -35,4 +36,5 @@ urlpatterns = [
         ClaimAuditEventListAPIView.as_view(),
         name="claims-audit-events",
     ),
+    path("queue/claims/", QueueClaimListAPIView.as_view(), name="queue-claims"),
 ]
