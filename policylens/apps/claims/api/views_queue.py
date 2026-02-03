@@ -6,11 +6,11 @@ from __future__ import annotations
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from policylens.apps.claims.api.serializers_queue import QueueClaimSerializer
 from policylens.apps.claims.models import Claim
 from policylens.apps.claims.queue import build_queue_queryset
-
 
 VALID_SLA_FILTERS = {None, "breached", "due_soon", "ok"}
 
@@ -49,9 +49,7 @@ class QueueClaimListAPIView(ListAPIView):
         """Assign queue rank based on response ordering."""
         queryset = list(self.get_queryset())
         for idx, obj in enumerate(queryset, start=1):
-            setattr(obj, "queue_rank", idx)
+            obj.queue_rank = idx
 
         serializer = self.get_serializer(queryset, many=True)
-        from rest_framework.response import Response  # local import for clarity
-
         return Response(serializer.data)

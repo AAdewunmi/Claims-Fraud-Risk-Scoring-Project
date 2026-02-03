@@ -9,8 +9,8 @@ from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from django.urls import reverse
+from django.utils import timezone
 
 from policylens.apps.claims.models import Claim, SlaClock
 from tests.factories import PolicyFactory
@@ -103,11 +103,27 @@ def test_queue_filter_sla_breached(api_client):
     api_client.force_authenticate(user=user)
 
     policy = PolicyFactory()
-    c1 = Claim.objects.create(policy=policy, claim_type=Claim.Type.CLAIM, priority=Claim.Priority.NORMAL, summary="B", created_by="x")
-    SlaClock.objects.create(claim=c1, started_at=c1.created_at, due_at=timezone.now() - timedelta(hours=1))
+    c1 = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.NORMAL,
+        summary="B",
+        created_by="x",
+    )
+    SlaClock.objects.create(
+        claim=c1, started_at=c1.created_at, due_at=timezone.now() - timedelta(hours=1)
+    )
 
-    c2 = Claim.objects.create(policy=policy, claim_type=Claim.Type.CLAIM, priority=Claim.Priority.NORMAL, summary="OK", created_by="x")
-    SlaClock.objects.create(claim=c2, started_at=c2.created_at, due_at=timezone.now() + timedelta(days=1))
+    c2 = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.NORMAL,
+        summary="OK",
+        created_by="x",
+    )
+    SlaClock.objects.create(
+        claim=c2, started_at=c2.created_at, due_at=timezone.now() + timedelta(days=1)
+    )
 
     url = reverse("queue-claims")
     resp = api_client.get(url, data={"sla": "breached"})

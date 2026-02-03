@@ -23,7 +23,6 @@ from django.utils import timezone
 
 from policylens.apps.claims.models import Claim
 
-
 DUE_SOON_WINDOW = timedelta(hours=6)
 
 PRIORITY_WEIGHT = {
@@ -44,7 +43,9 @@ def _priority_weight_case() -> Case:
     )
 
 
-def build_queue_queryset(*, now=None, status: str | None, priority: str | None, sla_filter: str | None):
+def build_queue_queryset(
+    *, now=None, status: str | None, priority: str | None, sla_filter: str | None
+):
     """Build a queryset for the ops review queue.
 
     Args:
