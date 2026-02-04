@@ -110,3 +110,24 @@ def build_audit_export(*, claim: Claim) -> dict:
             for e in audit_events
         ],
     }
+
+
+def load_claim_for_export(*, claim_id: int) -> Claim:
+    """Load a claim with all related data needed for export.
+
+    Args:
+        claim_id: Claim primary key.
+
+    Returns:
+        Fully loaded Claim instance.
+    """
+    return (
+        Claim.objects.select_related("policy", "policy__holder", "sla_clock")
+        .prefetch_related(
+            Prefetch("documents", queryset=ClaimDocument.objects.order_by("uploaded_at")),
+            Prefetch("notes", queryset=InternalNote.objects.order_by("created_at")),
+            Prefetch("decisions", queryset=ReviewDecision.objects.order_by("decided_at")),
+            Prefetch("audit_events", queryset=AuditEvent.objects.order_by("created_at")),
+        )
+        .get(pk=claim_id)
+    )
