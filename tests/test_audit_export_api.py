@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
-from policylens.apps.claims.models import Claim, ReviewDecision
+from policylens.apps.claims.models import Claim
 from tests.factories import PolicyFactory
 
 User = get_user_model()
@@ -50,10 +50,8 @@ def test_audit_export_contains_expected_sections_and_ordering(api_client):
     note_resp = api_client.post(note_url, data={"body": "First note"}, format="json")
     assert note_resp.status_code == 201
 
-    decision_url = reverse("claims-decisions-create", kwargs={"claim_id": claim_id})
-    # This requires reviewer/admin in your project. For week 3 export test, keep it as REQUEST_INFO via reviewer group elsewhere.
-    # If this test runs with a non-reviewer, skip decision creation.
-    # Here we avoid decision write to keep export test focused on shape.
+    # Decisions require reviewer/admin in your project. We skip creation here to
+    # keep export test focused on shape.
 
     export_url = reverse("claims-audit-export", kwargs={"claim_id": claim_id})
     export_resp = api_client.get(export_url)

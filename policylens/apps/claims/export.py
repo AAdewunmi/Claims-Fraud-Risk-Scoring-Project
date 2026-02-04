@@ -12,7 +12,13 @@ from __future__ import annotations
 from django.db.models import Prefetch
 from django.utils import timezone
 
-from policylens.apps.claims.models import AuditEvent, Claim, ClaimDocument, InternalNote, ReviewDecision
+from policylens.apps.claims.models import (
+    AuditEvent,
+    Claim,
+    ClaimDocument,
+    InternalNote,
+    ReviewDecision,
+)
 
 
 def build_audit_export(*, claim: Claim) -> dict:
@@ -61,13 +67,15 @@ def build_audit_export(*, claim: Claim) -> dict:
             "email": holder.email,
             "phone": holder.phone,
         },
-        "sla_clock": None
-        if sla_clock is None
-        else {
-            "started_at": sla_clock.started_at.isoformat(),
-            "due_at": sla_clock.due_at.isoformat() if sla_clock.due_at else None,
-            "breached_at": sla_clock.breached_at.isoformat() if sla_clock.breached_at else None,
-        },
+        "sla_clock": (
+            None
+            if sla_clock is None
+            else {
+                "started_at": sla_clock.started_at.isoformat(),
+                "due_at": sla_clock.due_at.isoformat() if sla_clock.due_at else None,
+                "breached_at": sla_clock.breached_at.isoformat() if sla_clock.breached_at else None,
+            }
+        ),
         "documents": [
             {
                 "id": d.pk,
