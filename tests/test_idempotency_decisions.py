@@ -61,3 +61,42 @@ def test_decision_idempotency_replay_returns_same_response_and_no_duplicate_audi
     assert second.json()["id"] == first_id
 
     assert AuditEvent.objects.filter(claim_id=claim_id, event_type="DECISION_RECORDED").count() == 1
+
+
+@pytest.mark.django_db
+def test_decision_idempotency_conflict_on_payload_mismatch_returns_409(api_client):
+    """Same Idempotency-Key with different payload should return 409."""
+    reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
+    reviewer = User.objects.create_user(username="idem_reviewer2", password="password123")
+    reviewer.groups.add(reviewer_group)
+    api_client.force_authenticate(user=reviewer)
+
+    policy = PolicyFactory()
+    create_url = reverse("claims-list-create")
+    claim_resp = api_client.post(
+        create_url,
+        data={"policy_id": policy.pk, "claim_type": Claim.Type.CLAIM, "priority": Claim.Priority.NORMAL},
+        format="json",
+    )
+    assert claim_resp.status_code == 201
+    claim_id = claim_resp.json()["id"]
+
+    decision_url = reverse("claims-decisions-create", kwargs={"claim_id": claim_id})
+    headers = {"HTTP_IDEMPOTENCY_KEY": "key-xyz"}
+
+    ok = api_client.post(
+        decision_url,
+        data={"decision": ReviewDecision.Decision.REQUEST_INFO, "notes": "First"},
+        format="json",
+        **headers,
+    )
+    assert ok.status_code == 201
+
+    conflict = api_client.post(
+        decision_url,
+        data={"decision": ReviewDecision.Decision.APPROVE, "notes": "Different"},
+        format="json",
+        **headers,
+    )
+    assert conflict.status_code == 409
+    assert "detail" in conflict.json()
