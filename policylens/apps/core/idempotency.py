@@ -13,7 +13,7 @@ import hashlib
 
 from django.db import IntegrityError, transaction
 
-from apps.core.models import IdempotencyRecord
+from policylens.apps.core.models import IdempotencyRecord
 
 
 class IdempotencyConflict(Exception):

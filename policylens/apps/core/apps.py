@@ -8,4 +8,4 @@ class CoreConfig(AppConfig):
     """Config for core app."""
 
     default_auto_field = "django.db.models.BigAutoField"
-    name = "apps.core"
+    name = "policylens.apps.core"
