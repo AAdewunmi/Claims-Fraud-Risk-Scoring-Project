@@ -9,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, ListCreateAPIView, RetrieveAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from policylens.apps.claims import services
 from policylens.apps.claims.api.serializers import (
@@ -28,6 +29,12 @@ from policylens.apps.claims.models import (
     ReviewDecision,
 )
 from policylens.apps.claims.permissions import IsReviewerOrAdmin
+from policylens.apps.core.idempotency import (
+    IdempotencyConflict,
+    find_record,
+    request_hash_from_bytes,
+    store_record,
+)
 
 
 def _actor_from_request(request) -> str:
@@ -156,6 +163,8 @@ class ClaimDecisionCreateAPIView(CreateAPIView):
     """Record a decision for a claim.
 
     Decisions are restricted to reviewer or admin roles.
+
+    Supports idempotency via Idempotency-Key header.
     """
 
     serializer_class = ReviewDecisionCreateSerializer
@@ -170,17 +179,50 @@ class ClaimDecisionCreateAPIView(CreateAPIView):
         ctx["actor"] = _actor_from_request(self.request)
         return ctx
 
-    def perform_create(self, serializer):
-        """Create decision via domain service."""
+    def create(self, request, *args, **kwargs):
+        """Create decision with idempotency support."""
+        key = request.headers.get("Idempotency-Key")
+        if key:
+            body_hash = request_hash_from_bytes(request.body or b"")
+            existing = find_record(
+                user=request.user,
+                key=key,
+                method=request.method,
+                path=request.path,
+            )
+            if existing is not None:
+                if existing.request_hash != body_hash:
+                    return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+                return Response(existing.response_body, status=existing.response_status)
+
         try:
-            self.created_object = serializer.save()
+            response = super().create(request, *args, **kwargs)
         except services.DomainRuleViolation as exc:
             raise _domain_error_to_validation_error(exc) from exc
 
-    def create(self, request, *args, **kwargs):
-        """Return created decision using the read contract."""
-        response = super().create(request, *args, **kwargs)
         decision: ReviewDecision | None = getattr(self, "created_object", None)
         if decision is not None:
             response.data = ReviewDecisionSerializer(decision).data
+
+        if key:
+            body_hash = request_hash_from_bytes(request.body or b"")
+            try:
+                store_record(
+                    user=request.user,
+                    key=key,
+                    method=request.method,
+                    path=request.path,
+                    request_hash=body_hash,
+                    response_status=response.status_code,
+                    response_body=response.data
+                    if isinstance(response.data, dict)
+                    else {"result": response.data},
+                )
+            except IdempotencyConflict:
+                return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+
         return response
+
+    def perform_create(self, serializer):
+        """Create decision via domain service and keep object for response."""
+        self.created_object = serializer.save()
