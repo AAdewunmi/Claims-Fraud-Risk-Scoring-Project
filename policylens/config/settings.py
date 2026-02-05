@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     # Local apps
+    "policylens.apps.core",
     "policylens.apps.claims",
 ]
 
@@ -100,8 +101,8 @@ MEDIA_ROOT = BASE_DIR.parent / "media"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.BasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
     ],
     # Week 2: core workflow API is authenticated by default.
     "DEFAULT_PERMISSION_CLASSES": [
