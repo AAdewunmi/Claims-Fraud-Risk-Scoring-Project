@@ -45,7 +45,9 @@ def _actor_from_request(request) -> str:
     return "anonymous"
 
 
-def _domain_error_to_validation_error(exc: services.DomainRuleViolation) -> ValidationError:
+def _domain_error_to_validation_error(
+    exc: services.DomainRuleViolation,
+) -> ValidationError:
     """Convert domain rule violations into a stable client-facing error response."""
     return ValidationError({"detail": str(exc)})
 
@@ -98,7 +100,10 @@ class ClaimListCreateAPIView(ListCreateAPIView):
             )
             if existing is not None:
                 if existing.request_hash != body_hash:
-                    return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+                    return Response(
+                        {"detail": "Idempotency key reuse with different payload."},
+                        status=409,
+                    )
                 return Response(existing.response_body, status=existing.response_status)
 
         response = super().create(request, *args, **kwargs)
@@ -113,12 +118,17 @@ class ClaimListCreateAPIView(ListCreateAPIView):
                     path=request.path,
                     request_hash=body_hash,
                     response_status=response.status_code,
-                    response_body=response.data
-                    if isinstance(response.data, dict)
-                    else {"result": response.data},
+                    response_body=(
+                        response.data
+                        if isinstance(response.data, dict)
+                        else {"result": response.data}
+                    ),
                 )
             except IdempotencyConflict:
-                return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+                return Response(
+                    {"detail": "Idempotency key reuse with different payload."},
+                    status=409,
+                )
 
         return response
 
@@ -179,13 +189,19 @@ class ClaimDocumentUploadAPIView(CreateAPIView):
             )
             if existing is not None:
                 if existing.request_hash != body_hash:
-                    return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+                    return Response(
+                        {"detail": "Idempotency key reuse with different payload."},
+                        status=409,
+                    )
                 return Response(existing.response_body, status=existing.response_status)
 
         response = super().create(request, *args, **kwargs)
         doc: ClaimDocument | None = getattr(self, "created_object", None)
         if doc is not None:
-            response.data = ClaimDocumentSerializer(doc, context=self.get_serializer_context()).data
+            response.data = ClaimDocumentSerializer(
+                doc,
+                context=self.get_serializer_context(),
+            ).data
 
         if key:
             body_hash = request_hash_from_bytes(request.body or b"")
@@ -197,12 +213,17 @@ class ClaimDocumentUploadAPIView(CreateAPIView):
                     path=request.path,
                     request_hash=body_hash,
                     response_status=response.status_code,
-                    response_body=response.data
-                    if isinstance(response.data, dict)
-                    else {"result": response.data},
+                    response_body=(
+                        response.data
+                        if isinstance(response.data, dict)
+                        else {"result": response.data}
+                    ),
                 )
             except IdempotencyConflict:
-                return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+                return Response(
+                    {"detail": "Idempotency key reuse with different payload."},
+                    status=409,
+                )
 
         return response
 
@@ -242,7 +263,10 @@ class ClaimNoteCreateAPIView(CreateAPIView):
             )
             if existing is not None:
                 if existing.request_hash != body_hash:
-                    return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+                    return Response(
+                        {"detail": "Idempotency key reuse with different payload."},
+                        status=409,
+                    )
                 return Response(existing.response_body, status=existing.response_status)
 
         response = super().create(request, *args, **kwargs)
@@ -260,12 +284,17 @@ class ClaimNoteCreateAPIView(CreateAPIView):
                     path=request.path,
                     request_hash=body_hash,
                     response_status=response.status_code,
-                    response_body=response.data
-                    if isinstance(response.data, dict)
-                    else {"result": response.data},
+                    response_body=(
+                        response.data
+                        if isinstance(response.data, dict)
+                        else {"result": response.data}
+                    ),
                 )
             except IdempotencyConflict:
-                return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+                return Response(
+                    {"detail": "Idempotency key reuse with different payload."},
+                    status=409,
+                )
 
         return response
 
@@ -303,7 +332,10 @@ class ClaimDecisionCreateAPIView(CreateAPIView):
             )
             if existing is not None:
                 if existing.request_hash != body_hash:
-                    return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+                    return Response(
+                        {"detail": "Idempotency key reuse with different payload."},
+                        status=409,
+                    )
                 return Response(existing.response_body, status=existing.response_status)
 
         try:
@@ -325,12 +357,17 @@ class ClaimDecisionCreateAPIView(CreateAPIView):
                     path=request.path,
                     request_hash=body_hash,
                     response_status=response.status_code,
-                    response_body=response.data
-                    if isinstance(response.data, dict)
-                    else {"result": response.data},
+                    response_body=(
+                        response.data
+                        if isinstance(response.data, dict)
+                        else {"result": response.data}
+                    ),
                 )
             except IdempotencyConflict:
-                return Response({"detail": "Idempotency key reuse with different payload."}, status=409)
+                return Response(
+                    {"detail": "Idempotency key reuse with different payload."},
+                    status=409,
+                )
 
         return response
 

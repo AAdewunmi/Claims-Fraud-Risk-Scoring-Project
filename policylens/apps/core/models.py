@@ -21,7 +21,11 @@ class IdempotencyRecord(models.Model):
     """
 
     key = models.CharField(max_length=128)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="idempotency_records")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="idempotency_records",
+    )
     method = models.CharField(max_length=16)
     path = models.CharField(max_length=255)
     request_hash = models.CharField(max_length=64)
@@ -33,7 +37,10 @@ class IdempotencyRecord(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["key", "user", "method", "path"], name="uniq_idempotency_key_user_method_path")
+            models.UniqueConstraint(
+                fields=["key", "user", "method", "path"],
+                name="uniq_idempotency_key_user_method_path",
+            )
         ]
         indexes = [
             models.Index(fields=["user", "created_at"]),

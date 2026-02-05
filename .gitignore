@@ -28,6 +28,13 @@ media/
 htmlcov/
 .ruff_cache/
 
+# Local runbook artifacts
+idem_claim_create.json
+decision_1.json
+decision_2.json
+decision_conflict.txt
+audit_idem.json
+
 # OS
 .DS_Store
 
