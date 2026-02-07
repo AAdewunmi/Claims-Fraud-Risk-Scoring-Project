@@ -16,7 +16,7 @@
 
 # PolicyLens: Insurance Claims Fraud Risk Scoring System
 
-PolicyLens is an insurance operations and compliance workflow prototype that helps teams prioritise claims for review using fraud risk scoring, deterministic SLA rules, and exportable audit evidence. This build focuses on API-first design, testable domain services, and production-minded delivery.
+PolicyLens is an insurance ops and compliance workflow tool built API-first for core workflows, with a server-rendered ops UI added later. It helps teams prioritise claims for review using fraud risk scoring, deterministic SLA rules, and exportable audit evidence, with a focus on testable domain services and production-minded delivery.
 
 Work is in progress. The system runs end-to-end, but features, endpoints, and UI flows will continue to evolve as milestones are completed.
 
@@ -63,6 +63,48 @@ Planned next:
 - Deployment target walkthrough (Render or small VPS) with a repeatable runbook
 - Additional tests covering failure modes, idempotency, and edge cases
 - Performance checks for queue queries and export endpoints
+
+## Week 3 operational features
+
+### Ops queue
+
+Prioritised queue ordered by SLA and priority:
+
+- `GET /api/queue/claims/?status=&priority=&sla=breached|due_soon|ok`
+
+### Audit evidence
+
+- `GET /api/claims/{id}/audit-events/`
+
+### Audit export
+
+Evidence-grade export bundle:
+
+- `GET /api/claims/{id}/audit-export/`
+
+Response includes:
+- claim, policy, policy holder
+- SLA clock
+- documents metadata, notes, decisions
+- audit event timeline
+
+### Idempotency for decisions
+
+Decision writes accept `Idempotency-Key`:
+
+- `POST /api/claims/{id}/decisions/`
+
+Behaviour:
+- same key and same payload returns the same response
+- same key and different payload returns 409
+
+### SLA operations
+
+Backfill missing SLA clocks:
+
+```bash
+docker compose exec web python policylens/manage.py backfill_sla_clocks
+```
 
 ## Stack
 
@@ -158,6 +200,8 @@ These endpoints are treated as canonical and expanded throughout the lab:
 - POST /api/claims/{id}/decisions/
 - POST /api/claims/{id}/ml-score/  (fraud risk scoring)
 - GET /api/queue/claims/
+- GET /api/queue/claims/?status=&priority=&sla=breached|due_soon|ok
+- GET /api/claims/{id}/audit-events/
 - GET /api/claims/{id}/audit-export/
 - GET /api/claims/{id}/audit-export/?format=pdf
 
