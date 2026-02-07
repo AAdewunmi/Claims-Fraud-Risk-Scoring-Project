@@ -35,6 +35,7 @@ def test_sla_breach_sweep_marks_breached_and_appends_audit_event():
 
     call_command("sweep_sla_breaches")
 
+    claim.refresh_from_db()
     clock = claim.sla_clock
     assert clock.breached_at is not None
     assert AuditEvent.objects.filter(claim=claim, event_type="SLA_BREACHED").exists()
