@@ -12,7 +12,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from policylens.apps.claims.ml.contracts import FEATURE_NAMES, feature_contract_hash
 from policylens.apps.claims.ml.features import extract_features
-from policylens.apps.claims.models import Claim, ClaimDocument, ChecklistItem
+from policylens.apps.claims.models import ChecklistItem, Claim, ClaimDocument
 from tests.factories import PolicyFactory
 
 
@@ -40,8 +40,12 @@ def test_extract_features_returns_values_aligned_to_feature_names(settings, tmp_
         created_by="tester",
     )
 
-    ChecklistItem.objects.create(claim=claim, key="id", label="ID", is_required=True, is_satisfied=False)
-    ChecklistItem.objects.create(claim=claim, key="addr", label="Address", is_required=True, is_satisfied=True)
+    ChecklistItem.objects.create(
+        claim=claim, key="id", label="ID", is_required=True, is_satisfied=False
+    )
+    ChecklistItem.objects.create(
+        claim=claim, key="addr", label="Address", is_required=True, is_satisfied=True
+    )
 
     uploaded = SimpleUploadedFile("doc.pdf", b"pdfdata", content_type="application/pdf")
     ClaimDocument.objects.create(

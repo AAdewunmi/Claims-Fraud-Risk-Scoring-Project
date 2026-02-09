@@ -14,7 +14,8 @@ Contract design principles:
 from __future__ import annotations
 
 import hashlib
-from typing import Final, Sequence
+from collections.abc import Sequence
+from typing import Final
 
 # Contract version should bump only when FEATURE_NAMES meaning or order changes.
 FEATURE_CONTRACT_VERSION: Final[str] = "v1"
@@ -28,14 +29,12 @@ FEATURE_NAMES: Final[list[str]] = [
     "priority_is_low",
     "summary_length",
     "summary_has_digits",
-
     # Document metadata
     "documents_count",
     "documents_total_bytes",
     "documents_has_pdf",
     "documents_has_image",
     "documents_has_text",
-
     # Checklist completeness (if present)
     "checklist_required_count",
     "checklist_satisfied_count",

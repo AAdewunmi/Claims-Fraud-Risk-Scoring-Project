@@ -56,7 +56,9 @@ def extract_features(*, claim: Claim) -> FeatureResult:
     documents_count = float(docs.count())
     documents_total_bytes = float(sum((d.size_bytes or 0) for d in docs))
     documents_has_pdf = any((d.content_type or "").lower() == "application/pdf" for d in docs)
-    documents_has_image = any((d.content_type or "").lower() in {"image/jpeg", "image/png"} for d in docs)
+    documents_has_image = any(
+        (d.content_type or "").lower() in {"image/jpeg", "image/png"} for d in docs
+    )
     documents_has_text = any((d.content_type or "").lower() == "text/plain" for d in docs)
 
     checklist = ChecklistItem.objects.filter(claim=claim)
