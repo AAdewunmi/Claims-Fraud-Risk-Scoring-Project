@@ -22,7 +22,7 @@ from typing import Any
 import joblib
 from django.conf import settings
 
-from apps.claims.ml.contracts import FEATURE_CONTRACT_VERSION, FEATURE_NAMES, feature_contract_hash
+from policylens.apps.claims.ml.contracts import FEATURE_CONTRACT_VERSION, FEATURE_NAMES, feature_contract_hash
 
 
 @dataclass(frozen=True)
