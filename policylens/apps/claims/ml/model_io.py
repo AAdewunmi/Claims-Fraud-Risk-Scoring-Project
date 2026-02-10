@@ -58,3 +58,11 @@ class ModelMeta:
             feature_names=list(data["feature_names"]),
             metrics=dict(data.get("metrics") or {}),
         )
+
+
+def artifact_dir() -> Path:
+    """Return the artefact directory for ML bundles."""
+    base = getattr(settings, "ML_ARTIFACT_DIR", None)
+    if base:
+        return Path(base)
+    return Path(settings.BASE_DIR).parent / "artifacts" / "ml"
