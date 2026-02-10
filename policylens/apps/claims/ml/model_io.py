@@ -66,3 +66,10 @@ def artifact_dir() -> Path:
     if base:
         return Path(base)
     return Path(settings.BASE_DIR).parent / "artifacts" / "ml"
+
+
+def bundle_paths(*, model_version: str) -> tuple[Path, Path]:
+    """Return (model_path, meta_path) for a given model version."""
+    d = artifact_dir() / model_version
+    d.mkdir(parents=True, exist_ok=True)
+    return d / "model.joblib", d / "meta.json"
