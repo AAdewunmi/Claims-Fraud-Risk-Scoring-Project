@@ -90,3 +90,18 @@ def save_model_bundle(*, model: Any, meta: ModelMeta) -> tuple[str, Path]:
 
     meta_path.write_text(json.dumps(meta.to_dict(), indent=2), encoding="utf-8")
     return meta.model_version, model_path.parent
+
+
+def load_model_bundle(*, model_version: str) -> tuple[Any, ModelMeta]:
+    """Load model and metadata by version.
+
+    Raises:
+        FileNotFoundError if artefacts do not exist.
+    """
+    model_path, meta_path = bundle_paths(model_version=model_version)
+    if not model_path.exists() or not meta_path.exists():
+        raise FileNotFoundError(f"Missing model bundle for version '{model_version}'.")
+
+    model = joblib.load(model_path)
+    meta = ModelMeta.from_dict(json.loads(meta_path.read_text(encoding="utf-8")))
+    return model, meta
