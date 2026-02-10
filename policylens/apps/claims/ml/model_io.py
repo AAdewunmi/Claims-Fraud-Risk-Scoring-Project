@@ -22,7 +22,7 @@ from typing import Any
 import joblib
 from django.conf import settings
 
-from policylens.apps.claims.ml.contracts import FEATURE_CONTRACT_VERSION, FEATURE_NAMES, feature_contract_hash
+from apps.claims.ml.contracts import FEATURE_CONTRACT_VERSION, FEATURE_NAMES, feature_contract_hash
 
 
 @dataclass(frozen=True)
@@ -105,3 +105,14 @@ def load_model_bundle(*, model_version: str) -> tuple[Any, ModelMeta]:
     model = joblib.load(model_path)
     meta = ModelMeta.from_dict(json.loads(meta_path.read_text(encoding="utf-8")))
     return model, meta
+
+
+def validate_meta_against_current_contract(*, meta: ModelMeta) -> None:
+    """Validate loaded metadata against the current feature contract."""
+    current_hash = feature_contract_hash()
+    if meta.feature_contract_version != FEATURE_CONTRACT_VERSION:
+        raise ValueError("Feature contract version mismatch.")
+    if meta.feature_contract_hash != current_hash:
+        raise ValueError("Feature contract hash mismatch.")
+    if meta.feature_names != list(FEATURE_NAMES):
+        raise ValueError("Feature names ordering mismatch.")
