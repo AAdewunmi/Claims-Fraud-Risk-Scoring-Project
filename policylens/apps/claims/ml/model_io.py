@@ -73,3 +73,20 @@ def bundle_paths(*, model_version: str) -> tuple[Path, Path]:
     d = artifact_dir() / model_version
     d.mkdir(parents=True, exist_ok=True)
     return d / "model.joblib", d / "meta.json"
+
+
+def save_model_bundle(*, model: Any, meta: ModelMeta) -> tuple[str, Path]:
+    """Save model and meta to a versioned directory.
+
+    Args:
+        model: Any object supporting predict_proba(X).
+        meta: ModelMeta.
+
+    Returns:
+        Tuple of (model_version, directory_path).
+    """
+    model_path, meta_path = bundle_paths(model_version=meta.model_version)
+    joblib.dump(model, model_path)
+
+    meta_path.write_text(json.dumps(meta.to_dict(), indent=2), encoding="utf-8")
+    return meta.model_version, model_path.parent
