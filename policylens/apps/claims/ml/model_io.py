@@ -22,7 +22,11 @@ from typing import Any
 import joblib
 from django.conf import settings
 
-from policylens.apps.claims.ml.contracts import FEATURE_CONTRACT_VERSION, FEATURE_NAMES, feature_contract_hash
+from policylens.apps.claims.ml.contracts import (
+    FEATURE_CONTRACT_VERSION,
+    FEATURE_NAMES,
+    feature_contract_hash,
+)
 
 
 @dataclass(frozen=True)
@@ -48,7 +52,7 @@ class ModelMeta:
         }
 
     @staticmethod
-    def from_dict(data: dict[str, Any]) -> "ModelMeta":
+    def from_dict(data: dict[str, Any]) -> ModelMeta:
         """Load ModelMeta from dict."""
         return ModelMeta(
             model_version=str(data["model_version"]),

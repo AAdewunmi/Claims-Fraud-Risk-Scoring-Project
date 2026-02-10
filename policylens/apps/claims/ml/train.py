@@ -19,7 +19,11 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-from policylens.apps.claims.ml.contracts import FEATURE_CONTRACT_VERSION, FEATURE_NAMES, feature_contract_hash
+from policylens.apps.claims.ml.contracts import (
+    FEATURE_CONTRACT_VERSION,
+    FEATURE_NAMES,
+    feature_contract_hash,
+)
 from policylens.apps.claims.ml.model_io import ModelMeta, save_model_bundle
 
 
@@ -49,7 +53,9 @@ def _read_csv(*, path: Path) -> tuple[np.ndarray, np.ndarray]:
     return np.asarray(rows, dtype=float), np.asarray(labels, dtype=int)
 
 
-def train_from_csv(*, csv_path: Path, model_version: str, threshold: float, random_seed: int = 42) -> TrainResult:
+def train_from_csv(
+    *, csv_path: Path, model_version: str, threshold: float, random_seed: int = 42
+) -> TrainResult:
     """Train logistic regression and save a model bundle.
 
     Args:

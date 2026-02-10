@@ -26,7 +26,9 @@ class Command(BaseCommand):
     help = "Generate deterministic synthetic training data for completeness classifier."
 
     def add_arguments(self, parser) -> None:
-        parser.add_argument("--out", required=True, help="Output CSV path, e.g. artifacts/ml/data/synthetic.csv")
+        parser.add_argument(
+            "--out", required=True, help="Output CSV path, e.g. artifacts/ml/data/synthetic.csv"
+        )
         parser.add_argument("--rows", type=int, default=2000, help="Number of rows to generate.")
         parser.add_argument("--seed", type=int, default=42, help="Deterministic RNG seed.")
 
@@ -80,7 +82,9 @@ class Command(BaseCommand):
                 checklist_missing_required_count = 0
                 if checklist_required_count > 0:
                     checklist_satisfied_count = rng.randint(0, checklist_required_count)
-                    checklist_missing_required_count = checklist_required_count - checklist_satisfied_count
+                    checklist_missing_required_count = (
+                        checklist_required_count - checklist_satisfied_count
+                    )
 
                 # Rule-based label with small noise.
                 incomplete = 0
