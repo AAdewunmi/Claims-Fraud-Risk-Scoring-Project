@@ -2,10 +2,7 @@
 """
 Claims domain models.
 
-Week 2 adds:
-- File-backed ClaimDocument uploads
-- InternalNote for reviewer collaboration
-- Minimal workflow rules enforced in service layer
+Week 4 extends MlScore with model metadata for auditability.
 """
 
 from __future__ import annotations
@@ -79,7 +76,6 @@ class Claim(models.Model):
     priority = models.CharField(max_length=16, choices=Priority.choices, default=Priority.NORMAL)
     summary = models.TextField(blank=True)
 
-    # Week 2 uses string actor ids. Week 5 UI will use authenticated users.
     created_by = models.CharField(max_length=128, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -96,9 +92,8 @@ class Claim(models.Model):
         return f"Claim:{self.pk} {self.status}"
 
 
-def claim_document_upload_to(instance: ClaimDocument, filename: str) -> str:
+def claim_document_upload_to(instance: "ClaimDocument", filename: str) -> str:
     """Return a deterministic upload path for claim documents."""
-    # Avoid embedding the original filename in the directory structure.
     return f"claim_docs/claim_{instance.claim_id}/{filename}"
 
 
@@ -172,10 +167,7 @@ class ReviewDecision(models.Model):
 
 
 class SlaClock(models.Model):
-    """A simple SLA timer record.
-
-    Week 3 defines deterministic SLA rules and queue prioritisation logic.
-    """
+    """A simple SLA timer record."""
 
     claim = models.OneToOneField(Claim, on_delete=models.CASCADE, related_name="sla_clock")
     started_at = models.DateTimeField(auto_now_add=True)
@@ -184,10 +176,7 @@ class SlaClock(models.Model):
 
 
 class AuditEvent(models.Model):
-    """Append-only audit event table.
-
-    Treat this as evidence. Updates and deletes should be avoided by convention.
-    """
+    """Append-only audit event table."""
 
     claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="audit_events")
     event_type = models.CharField(max_length=64)
@@ -204,13 +193,16 @@ class AuditEvent(models.Model):
 
 
 class MlScore(models.Model):
-    """ML score placeholder.
-
-    Week 4 introduces training, feature contracts, reason codes, and scoring integration.
-    """
+    """Persisted ML score and explanation for a claim."""
 
     claim = models.OneToOneField(Claim, on_delete=models.CASCADE, related_name="ml_score")
     score = models.FloatField(default=0.0)
     label = models.CharField(max_length=32, blank=True)
     reason_codes = models.JSONField(default=list)
+
+    # Week 4 metadata for traceability.
+    model_version = models.CharField(max_length=64, blank=True)
+    threshold = models.FloatField(default=0.0)
+    feature_contract_hash = models.CharField(max_length=64, blank=True)
+
     scored_at = models.DateTimeField(auto_now=True)
