@@ -2,10 +2,7 @@
 """
 Django settings for PolicyLens.
 
-Environment is the source of truth.
-- Local dev uses .env
-- Docker Compose supplies env values
-- CI sets env values explicitly
+Week 4 adds ML artefact directory configuration.
 """
 
 from __future__ import annotations
@@ -21,6 +18,9 @@ env = environ.Env(
     DJANGO_SECRET_KEY=(str, ""),
     DJANGO_ALLOWED_HOSTS=(str, "localhost,127.0.0.1"),
     DATABASE_URL=(str, ""),
+    ML_ACTIVE_MODEL_VERSION=(str, "v1_2026_01_13"),
+    ML_SCORE_THRESHOLD=(float, 0.6),
+    ML_ARTIFACT_DIR=(str, ""),  # Optional override
 )
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
@@ -38,9 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Third-party
     "rest_framework",
-    # Local apps
     "policylens.apps.core",
     "policylens.apps.claims",
 ]
@@ -101,11 +99,17 @@ MEDIA_ROOT = BASE_DIR.parent / "media"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.BasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
     ],
-    # Week 2: core workflow API is authenticated by default.
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
 }
+
+# ML configuration
+ML_ACTIVE_MODEL_VERSION = env("ML_ACTIVE_MODEL_VERSION")
+ML_SCORE_THRESHOLD = float(env("ML_SCORE_THRESHOLD"))
+
+_ml_dir = env("ML_ARTIFACT_DIR")
+ML_ARTIFACT_DIR = _ml_dir if _ml_dir else str(BASE_DIR.parent / "artifacts" / "ml")
