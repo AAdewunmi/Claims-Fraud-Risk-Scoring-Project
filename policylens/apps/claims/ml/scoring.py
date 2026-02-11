@@ -19,11 +19,14 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.db import transaction
 
-from apps.claims.ml.contracts import feature_contract_hash
-from apps.claims.ml.features import extract_features
-from apps.claims.ml.model_io import load_model_bundle, validate_meta_against_current_contract
-from apps.claims.ml.reasons import reason_codes_from_features
-from apps.claims.models import AuditEvent, Claim, MlScore
+from policylens.apps.claims.ml.contracts import feature_contract_hash
+from policylens.apps.claims.ml.features import extract_features
+from policylens.apps.claims.ml.model_io import (
+    load_model_bundle,
+    validate_meta_against_current_contract,
+)
+from policylens.apps.claims.ml.reasons import reason_codes_from_features
+from policylens.apps.claims.models import AuditEvent, Claim, MlScore
 
 
 class ModelNotReady(Exception):

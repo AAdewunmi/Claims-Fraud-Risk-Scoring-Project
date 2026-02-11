@@ -92,7 +92,7 @@ class Claim(models.Model):
         return f"Claim:{self.pk} {self.status}"
 
 
-def claim_document_upload_to(instance: "ClaimDocument", filename: str) -> str:
+def claim_document_upload_to(instance: ClaimDocument, filename: str) -> str:
     """Return a deterministic upload path for claim documents."""
     return f"claim_docs/claim_{instance.claim_id}/{filename}"
 

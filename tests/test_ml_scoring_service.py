@@ -14,12 +14,14 @@ from dataclasses import dataclass
 
 import joblib
 import pytest
-from django.conf import settings
-from django.utils import timezone
 
-from apps.claims.ml.contracts import FEATURE_CONTRACT_VERSION, FEATURE_NAMES, feature_contract_hash
-from apps.claims.ml.scoring import score_claim
-from apps.claims.models import AuditEvent, Claim
+from policylens.apps.claims.ml.contracts import (
+    FEATURE_CONTRACT_VERSION,
+    FEATURE_NAMES,
+    feature_contract_hash,
+)
+from policylens.apps.claims.ml.scoring import score_claim
+from policylens.apps.claims.models import AuditEvent, Claim
 from tests.factories import PolicyFactory
 
 
@@ -82,7 +84,11 @@ def test_score_claim_persists_mlscore_and_appends_audit_event(settings, tmp_path
     assert ml.threshold == 0.6
     assert ml.feature_contract_hash == feature_contract_hash()
 
-    event = AuditEvent.objects.filter(claim=claim, event_type="ML_SCORED").order_by("-created_at").first()
+    event = (
+        AuditEvent.objects.filter(claim=claim, event_type="ML_SCORED")
+        .order_by("-created_at")
+        .first()
+    )
     assert event is not None
     assert event.payload["model_version"] == model_version
     assert event.payload["label"] == "LIKELY_INCOMPLETE"

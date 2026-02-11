@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from django.core.management.base import BaseCommand
 
-from apps.claims.ml.scoring import ModelNotReady, score_claim
-from apps.claims.models import Claim
+from policylens.apps.claims.ml.scoring import ModelNotReady, score_claim
+from policylens.apps.claims.models import Claim
 
 
 class Command(BaseCommand):
@@ -25,7 +25,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options) -> None:
         actor = str(options["actor"])
-        claims = Claim.objects.filter(status__in=[Claim.Status.NEW, Claim.Status.IN_REVIEW]).order_by("created_at")
+        claims = Claim.objects.filter(
+            status__in=[Claim.Status.NEW, Claim.Status.IN_REVIEW]
+        ).order_by("created_at")
 
         scored = 0
         for claim in claims:
