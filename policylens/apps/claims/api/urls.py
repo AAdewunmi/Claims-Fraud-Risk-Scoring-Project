@@ -12,6 +12,7 @@ from policylens.apps.claims.api.views import (
 )
 from policylens.apps.claims.api.views_audit import ClaimAuditEventListAPIView
 from policylens.apps.claims.api.views_export import ClaimAuditExportAPIView
+from policylens.apps.claims.api.views_ml import ClaimMlScoreAPIView
 from policylens.apps.claims.api.views_queue import QueueClaimListAPIView
 
 urlpatterns = [
@@ -41,6 +42,11 @@ urlpatterns = [
         "claims/<int:claim_id>/audit-export/",
         ClaimAuditExportAPIView.as_view(),
         name="claims-audit-export",
+    ),
+    path(
+        "claims/<int:claim_id>/ml-score/",
+        ClaimMlScoreAPIView.as_view(),
+        name="claims-ml-score",
     ),
     path("queue/claims/", QueueClaimListAPIView.as_view(), name="queue-claims"),
 ]
