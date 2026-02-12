@@ -2,7 +2,7 @@
 """
 Serializers define the canonical API contract.
 
-Week 2 adds nested contracts and boundary validation.
+Week 4 surfaces ml_score fields in claim detail.
 """
 
 from __future__ import annotations
@@ -70,15 +70,13 @@ class ClaimSerializer(serializers.ModelSerializer):
 
 
 class ClaimDetailSerializer(serializers.ModelSerializer):
-    """Claim detail contract used by ops screens later.
-
-    Keep it stable and intentionally small in week 2.
-    """
+    """Claim detail contract used by ops screens later."""
 
     policy_number = serializers.CharField(source="policy.policy_number", read_only=True)
     documents_count = serializers.IntegerField(read_only=True)
     notes_count = serializers.IntegerField(read_only=True)
     decisions_count = serializers.IntegerField(read_only=True)
+    ml_score = serializers.SerializerMethodField()
 
     class Meta:
         model = Claim
@@ -95,7 +93,23 @@ class ClaimDetailSerializer(serializers.ModelSerializer):
             "documents_count",
             "notes_count",
             "decisions_count",
+            "ml_score",
         ]
+
+    def get_ml_score(self, obj: Claim):
+        """Return persisted ml_score fields if available."""
+        ml = getattr(obj, "ml_score", None)
+        if ml is None:
+            return None
+        return {
+            "score": ml.score,
+            "label": ml.label,
+            "reason_codes": ml.reason_codes,
+            "model_version": ml.model_version,
+            "threshold": ml.threshold,
+            "feature_contract_hash": ml.feature_contract_hash,
+            "scored_at": ml.scored_at.isoformat(),
+        }
 
 
 class ClaimDocumentUploadSerializer(serializers.Serializer):
