@@ -16,7 +16,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.urls import reverse
 
-from policylens.apps.claims.ml.contracts import FEATURE_CONTRACT_VERSION, FEATURE_NAMES, feature_contract_hash
+from policylens.apps.claims.ml.contracts import (
+    FEATURE_CONTRACT_VERSION,
+    FEATURE_NAMES,
+    feature_contract_hash,
+)
 from policylens.apps.claims.models import Claim
 from tests.factories import PolicyFactory
 

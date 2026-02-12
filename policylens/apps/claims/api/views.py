@@ -30,6 +30,7 @@ from policylens.apps.claims.models import (
 )
 from policylens.apps.claims.permissions import IsReviewerOrAdmin
 from policylens.apps.core.idempotency import (
+    IdempotencyConflict,
     find_record,
     request_hash_from_bytes,
     store_record,
@@ -52,7 +53,10 @@ def _domain_error_to_validation_error(
 
 
 class ClaimListCreateAPIView(ListCreateAPIView):
-    """List and create claims."""
+    """List and create claims.
+
+    Supports idempotency via Idempotency-Key header on create.
+    """
 
     serializer_class = ClaimSerializer
     permission_classes = [IsAuthenticated]
@@ -75,6 +79,58 @@ class ClaimListCreateAPIView(ListCreateAPIView):
         ctx = super().get_serializer_context()
         ctx["actor"] = _actor_from_request(self.request)
         return ctx
+
+    def perform_create(self, serializer):
+        """Create claim via domain service and store created object."""
+        try:
+            self.created_object = serializer.save()
+        except services.DomainRuleViolation as exc:
+            raise _domain_error_to_validation_error(exc) from exc
+
+    def create(self, request, *args, **kwargs):
+        """Create claim with idempotency support."""
+        key = request.headers.get("Idempotency-Key")
+        if key:
+            body_hash = request_hash_from_bytes(request.body or b"")
+            existing = find_record(
+                user=request.user,
+                key=key,
+                method=request.method,
+                path=request.path,
+            )
+            if existing is not None:
+                if existing.request_hash != body_hash:
+                    return Response(
+                        {"detail": "Idempotency key reuse with different payload."},
+                        status=409,
+                    )
+                return Response(existing.response_body, status=existing.response_status)
+
+        response = super().create(request, *args, **kwargs)
+
+        if key:
+            body_hash = request_hash_from_bytes(request.body or b"")
+            try:
+                store_record(
+                    user=request.user,
+                    key=key,
+                    method=request.method,
+                    path=request.path,
+                    request_hash=body_hash,
+                    response_status=response.status_code,
+                    response_body=(
+                        response.data
+                        if isinstance(response.data, dict)
+                        else {"result": response.data}
+                    ),
+                )
+            except IdempotencyConflict:
+                return Response(
+                    {"detail": "Idempotency key reuse with different payload."},
+                    status=409,
+                )
+
+        return response
 
 
 class ClaimRetrieveAPIView(RetrieveAPIView):
@@ -122,13 +178,53 @@ class ClaimDocumentUploadAPIView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         """Return the created document in a stable read contract."""
+        key = request.headers.get("Idempotency-Key")
+        if key:
+            body_hash = request_hash_from_bytes(request.body or b"")
+            existing = find_record(
+                user=request.user,
+                key=key,
+                method=request.method,
+                path=request.path,
+            )
+            if existing is not None:
+                if existing.request_hash != body_hash:
+                    return Response(
+                        {"detail": "Idempotency key reuse with different payload."},
+                        status=409,
+                    )
+                return Response(existing.response_body, status=existing.response_status)
+
         response = super().create(request, *args, **kwargs)
-        doc: ClaimDocument = getattr(self, "created_object", None)
+        doc: ClaimDocument | None = getattr(self, "created_object", None)
         if doc is not None:
             response.data = ClaimDocumentSerializer(
                 doc,
                 context=self.get_serializer_context(),
             ).data
+
+        if key:
+            body_hash = request_hash_from_bytes(request.body or b"")
+            try:
+                store_record(
+                    user=request.user,
+                    key=key,
+                    method=request.method,
+                    path=request.path,
+                    request_hash=body_hash,
+                    response_status=response.status_code,
+                    response_body=(
+                        response.data
+                        if isinstance(response.data, dict)
+                        else {"result": response.data}
+                    ),
+                )
+            except IdempotencyConflict:
+                return Response(
+                    {"detail": "Idempotency key reuse with different payload."},
+                    status=409,
+                )
+
         return response
 
 
@@ -156,15 +252,57 @@ class ClaimNoteCreateAPIView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         """Return created note using the read contract."""
+        key = request.headers.get("Idempotency-Key")
+        if key:
+            body_hash = request_hash_from_bytes(request.body or b"")
+            existing = find_record(
+                user=request.user,
+                key=key,
+                method=request.method,
+                path=request.path,
+            )
+            if existing is not None:
+                if existing.request_hash != body_hash:
+                    return Response(
+                        {"detail": "Idempotency key reuse with different payload."},
+                        status=409,
+                    )
+                return Response(existing.response_body, status=existing.response_status)
+
         response = super().create(request, *args, **kwargs)
-        note: InternalNote = getattr(self, "created_object", None)
+        note: InternalNote | None = getattr(self, "created_object", None)
         if note is not None:
             response.data = InternalNoteSerializer(note).data
+
+        if key:
+            body_hash = request_hash_from_bytes(request.body or b"")
+            try:
+                store_record(
+                    user=request.user,
+                    key=key,
+                    method=request.method,
+                    path=request.path,
+                    request_hash=body_hash,
+                    response_status=response.status_code,
+                    response_body=(
+                        response.data
+                        if isinstance(response.data, dict)
+                        else {"result": response.data}
+                    ),
+                )
+            except IdempotencyConflict:
+                return Response(
+                    {"detail": "Idempotency key reuse with different payload."},
+                    status=409,
+                )
+
         return response
 
 
 class ClaimDecisionCreateAPIView(CreateAPIView):
     """Record a decision for a claim.
+
+    Decisions are restricted to reviewer or admin roles.
 
     Supports idempotency via Idempotency-Key header.
     """
@@ -205,25 +343,31 @@ class ClaimDecisionCreateAPIView(CreateAPIView):
         except services.DomainRuleViolation as exc:
             raise _domain_error_to_validation_error(exc) from exc
 
-        decision: ReviewDecision = getattr(self, "created_object", None)
+        decision: ReviewDecision | None = getattr(self, "created_object", None)
         if decision is not None:
             response.data = ReviewDecisionSerializer(decision).data
 
         if key:
             body_hash = request_hash_from_bytes(request.body or b"")
-            store_record(
-                user=request.user,
-                key=key,
-                method=request.method,
-                path=request.path,
-                request_hash=body_hash,
-                response_status=response.status_code,
-                response_body=(
-                    response.data
-                    if isinstance(response.data, dict)
-                    else {"result": response.data}
-                ),
-            )
+            try:
+                store_record(
+                    user=request.user,
+                    key=key,
+                    method=request.method,
+                    path=request.path,
+                    request_hash=body_hash,
+                    response_status=response.status_code,
+                    response_body=(
+                        response.data
+                        if isinstance(response.data, dict)
+                        else {"result": response.data}
+                    ),
+                )
+            except IdempotencyConflict:
+                return Response(
+                    {"detail": "Idempotency key reuse with different payload."},
+                    status=409,
+                )
 
         return response
 

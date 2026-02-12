@@ -12,12 +12,12 @@ These permissions are intentionally simple and deterministic to keep API behavio
 
 from __future__ import annotations
 
-from typing import AbstractSet
+from collections.abc import Set
 
 from rest_framework.permissions import BasePermission
 
 
-def _user_group_names(user) -> AbstractSet[str]:
+def _user_group_names(user) -> Set[str]:
     """Return the set of Django auth group names for a user.
 
     Args:
