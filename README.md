@@ -160,7 +160,7 @@ Login uses the demo users created by the command above.
 
 Run tests:
 
-- docker compose exec web pytest -q
+- docker compose exec web pytest -q --cov=policylens --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-fail-under=80
 
 Run lint and format checks:
 
@@ -171,9 +171,10 @@ CI enforces:
 - ruff
 - black --check
 - pytest with Postgres
-- coverage threshold
+- coverage threshold (`>= 80%`) via `--cov-fail-under=80`
 
-Coverage reports are uploaded to Codecov from CI. Since the repo is public, no token is required.
+Coverage reports are uploaded to Codecov from CI, and Codecov project status target is set to 80% in `codecov.yml`.
+Coverage excludes non-runtime files via `.coveragerc` (migrations, management commands, ASGI/WSGI entrypoints).
 View the coverage report here:
 ```
 https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project

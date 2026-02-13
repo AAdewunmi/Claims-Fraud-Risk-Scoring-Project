@@ -14,7 +14,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.urls import reverse
 
-from policylens.apps.claims.ml.contracts import FEATURE_CONTRACT_VERSION, FEATURE_NAMES, feature_contract_hash
+from policylens.apps.claims.ml.contracts import (
+    FEATURE_CONTRACT_VERSION,
+    FEATURE_NAMES,
+    feature_contract_hash,
+)
 from policylens.apps.claims.models import Claim
 
 User = get_user_model()
@@ -36,7 +40,10 @@ class FakeModel:
 def test_audit_export_includes_ml_score_after_scoring(api_client, settings, tmp_path):
     """Export should include ml_score when present."""
     reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
-    reviewer = User.objects.create_user(username="export_ml_reviewer", password="password123")
+    reviewer = User.objects.create_user(
+        username="export_ml_reviewer",
+        password="password123",
+    )
     reviewer.groups.add(reviewer_group)
     api_client.force_authenticate(user=reviewer)
 
@@ -71,7 +78,12 @@ def test_audit_export_includes_ml_score_after_scoring(api_client, settings, tmp_
     create_url = reverse("claims-list-create")
     c = api_client.post(
         create_url,
-        data={"policy_id": policy.pk, "claim_type": Claim.Type.CLAIM, "priority": Claim.Priority.NORMAL, "summary": "Export ML test " + "x" * 80},
+        data={
+            "policy_id": policy.pk,
+            "claim_type": Claim.Type.CLAIM,
+            "priority": Claim.Priority.NORMAL,
+            "summary": "Export ML test " + "x" * 80,
+        },
         format="json",
     )
     assert c.status_code == 201
