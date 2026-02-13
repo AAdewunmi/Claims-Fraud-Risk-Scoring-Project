@@ -26,6 +26,8 @@ services:
       - ./policylens:/app/policylens
       - ./tests:/app/tests
       - ./media:/app/media
+      - ./.coveragerc:/app/.coveragerc:ro
+      - ./pytest.ini:/app/pytest.ini:ro
     ports:
       - "8000:8000"
     depends_on:

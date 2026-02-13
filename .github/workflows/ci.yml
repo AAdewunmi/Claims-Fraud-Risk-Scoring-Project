@@ -58,7 +58,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest -q --cov=policylens --cov-report=term-missing --cov-report=xml --cov-fail-under=80
+          pytest -q --cov=policylens --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-fail-under=80
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
