@@ -5,6 +5,8 @@ Export must be deterministic:
 - Stable keys
 - Chronological ordering for timeline-like sections
 - No file contents, only metadata and URLs
+
+Week 4 adds ml_score to the export bundle when available.
 """
 
 from __future__ import annotations
@@ -39,6 +41,7 @@ def build_audit_export(*, claim: Claim) -> dict:
     audit_events = list(claim.audit_events.all().order_by("created_at"))
 
     sla_clock = getattr(claim, "sla_clock", None)
+    ml_score = getattr(claim, "ml_score", None)
 
     return {
         "export_version": "v1",
@@ -74,6 +77,19 @@ def build_audit_export(*, claim: Claim) -> dict:
                 "started_at": sla_clock.started_at.isoformat(),
                 "due_at": sla_clock.due_at.isoformat() if sla_clock.due_at else None,
                 "breached_at": sla_clock.breached_at.isoformat() if sla_clock.breached_at else None,
+            }
+        ),
+        "ml_score": (
+            None
+            if ml_score is None
+            else {
+                "score": ml_score.score,
+                "label": ml_score.label,
+                "reason_codes": ml_score.reason_codes,
+                "model_version": ml_score.model_version,
+                "threshold": ml_score.threshold,
+                "feature_contract_hash": ml_score.feature_contract_hash,
+                "scored_at": ml_score.scored_at.isoformat(),
             }
         ),
         "documents": [
@@ -130,7 +146,7 @@ def load_claim_for_export(*, claim_id: int) -> Claim:
         Fully loaded Claim instance.
     """
     return (
-        Claim.objects.select_related("policy", "policy__holder", "sla_clock")
+        Claim.objects.select_related("policy", "policy__holder", "sla_clock", "ml_score")
         .prefetch_related(
             Prefetch("documents", queryset=ClaimDocument.objects.order_by("uploaded_at")),
             Prefetch("notes", queryset=InternalNote.objects.order_by("created_at")),
