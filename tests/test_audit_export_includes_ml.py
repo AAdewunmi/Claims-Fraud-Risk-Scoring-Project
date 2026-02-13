@@ -40,7 +40,10 @@ class FakeModel:
 def test_audit_export_includes_ml_score_after_scoring(api_client, settings, tmp_path):
     """Export should include ml_score when present."""
     reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
-    reviewer = User.objects.create_user(username="export_ml_reviewer", password="password123")
+    reviewer = User.objects.create_user(
+        username="export_ml_reviewer",
+        password="password123",
+    )
     reviewer.groups.add(reviewer_group)
     api_client.force_authenticate(user=reviewer)
 
