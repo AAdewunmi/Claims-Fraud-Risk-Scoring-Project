@@ -1,0 +1,15 @@
+/* path: policylens/apps/ops/static/ops/ops.css */
+:root {
+  --pl-radius: 14px;
+  --pl-card-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+
+  /* Small visual identity without fighting Bootstrap */
+  --bs-border-radius: var(--pl-radius);
+  --bs-border-radius-lg: calc(var(--pl-radius) + 4px);
+  --bs-primary: #2f6fed;
+  --bs-link-color: #2f6fed;
+}
+
+.card.shadow-sm {
+  box-shadow: var(--pl-card-shadow) !important;
+}
