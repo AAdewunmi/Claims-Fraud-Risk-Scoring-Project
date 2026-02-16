@@ -3,7 +3,7 @@
 
 from django.urls import path
 
-from apps.ops.views import ops_home, queue_view
+from policylens.apps.ops.views import ops_home, queue_view
 
 app_name = "ops"
 
