@@ -20,7 +20,7 @@ env = environ.Env(
     DATABASE_URL=(str, ""),
     ML_ACTIVE_MODEL_VERSION=(str, "v1_2026_01_13"),
     ML_SCORE_THRESHOLD=(float, 0.6),
-    ML_ARTIFACT_DIR=(str, ""),  # Optional override
+    ML_ARTIFACT_DIR=(str, ""),
 )
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
@@ -92,12 +92,8 @@ TIME_ZONE = "Europe/London"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR.parent / "staticfiles"
-STATICFILES_DIRS = [
-    BASE_DIR.parent / "static",
-    BASE_DIR / "apps" / "ops" / "static",
-]
+STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "apps" / "ops" / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MEDIA_URL = "/media/"
@@ -105,8 +101,8 @@ MEDIA_ROOT = BASE_DIR.parent / "media"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.BasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
