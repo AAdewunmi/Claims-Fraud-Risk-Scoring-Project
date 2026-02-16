@@ -47,4 +47,7 @@ def test_root_urlpatterns_include_media_static_when_debug_true():
     urls_module = importlib.import_module("policylens.config.urls")
     reloaded = importlib.reload(urls_module)
     media_prefix = settings.MEDIA_URL.lstrip("/")
-    assert any(str(pattern.pattern).startswith(f"^{media_prefix}") for pattern in reloaded.urlpatterns)
+    assert any(
+        str(pattern.pattern).startswith(f"^{media_prefix}")
+        for pattern in reloaded.urlpatterns
+    )
