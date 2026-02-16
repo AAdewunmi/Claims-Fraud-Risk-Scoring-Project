@@ -2,7 +2,7 @@
 """
 Django settings for PolicyLens.
 
-Week 4 adds ML artefact directory configuration.
+Week 5 adds ops app and static files wiring.
 """
 
 from __future__ import annotations
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "policylens.apps.core",
     "policylens.apps.claims",
+    "policylens.apps.ops",
 ]
 
 MIDDLEWARE = [
@@ -95,6 +96,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR.parent / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR.parent / "static",
+    BASE_DIR / "apps" / "ops" / "static",
 ]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -117,3 +119,6 @@ ML_SCORE_THRESHOLD = float(env("ML_SCORE_THRESHOLD"))
 
 _ml_dir = env("ML_ARTIFACT_DIR")
 ML_ARTIFACT_DIR = _ml_dir if _ml_dir else str(BASE_DIR.parent / "artifacts" / "ml")
+
+LOGIN_URL = "/admin/login/"
+LOGIN_REDIRECT_URL = "/ops/"
