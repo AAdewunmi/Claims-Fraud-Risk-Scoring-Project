@@ -1,0 +1,20 @@
+<!-- path: policylens/apps/ops/templates/ops/queue.html -->
+{% extends "ops/base.html" %}
+{% load static %}
+
+{% block title %}Queue, PolicyLens Ops{% endblock %}
+
+{% block content %}
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-1">Review queue</h1>
+      <div class="text-muted">Prioritised by SLA and priority.</div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="text-muted">Queue data wiring lands Tuesday.</div>
+    </div>
+  </div>
+{% endblock %}
