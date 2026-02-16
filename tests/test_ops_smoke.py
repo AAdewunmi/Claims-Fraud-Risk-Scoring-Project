@@ -48,6 +48,5 @@ def test_root_urlpatterns_include_media_static_when_debug_true():
     reloaded = importlib.reload(urls_module)
     media_prefix = settings.MEDIA_URL.lstrip("/")
     assert any(
-        str(pattern.pattern).startswith(f"^{media_prefix}")
-        for pattern in reloaded.urlpatterns
+        str(pattern.pattern).startswith(f"^{media_prefix}") for pattern in reloaded.urlpatterns
     )
