@@ -9,4 +9,4 @@ from policylens.apps.ops.apps import OpsConfig
 def test_ops_app_config_values():
     """OpsConfig exposes the expected Django app metadata."""
     assert OpsConfig.default_auto_field == "django.db.models.BigAutoField"
-    assert OpsConfig.name == "apps.ops"
+    assert OpsConfig.name == "policylens.apps.ops"
