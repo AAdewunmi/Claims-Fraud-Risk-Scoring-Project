@@ -3,18 +3,67 @@
 {% block title %}Claim #{{ claim.id }}, PolicyLens Ops{% endblock %}
 
 {% block content %}
+  <div class="mb-3">
+    <a class="text-decoration-none small" href="{% url 'ops:queue' %}">&larr; Back to queue</a>
+  </div>
+
   <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
       <h1 class="h3 mb-1">Claim #{{ claim.id }}</h1>
       <div class="text-muted">Claim detail placeholder.</div>
+    </div>
+    <div>
+      <span class="badge text-bg-secondary">{{ claim.priority }}</span>
+      {% if claim.status == "DECIDED" %}
+        <span class="badge text-bg-success">Decided</span>
+      {% elif claim.status == "IN_REVIEW" %}
+        <span class="badge text-bg-warning">In review</span>
+      {% else %}
+        <span class="badge text-bg-primary">New</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">Documents</div>
+          <div class="h4 mb-0">{{ claim.documents.all|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">Notes</div>
+          <div class="h4 mb-0">{{ claim.notes.all|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">Decisions</div>
+          <div class="h4 mb-0">{{ claim.decisions.all|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">Audit Events</div>
+          <div class="h4 mb-0">{{ claim.audit_events.all|length }}</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="card shadow-sm">
     <div class="card-body">
       <div><strong>Policy:</strong> {{ claim.policy.policy_number }}</div>
-      <div><strong>Status:</strong> {{ claim.status }}</div>
-      <div><strong>Priority:</strong> {{ claim.priority }}</div>
+      <div><strong>Holder:</strong> {{ claim.policy.holder.full_name }}</div>
+      <div><strong>Created:</strong> {{ claim.created_at }}</div>
       <div class="mt-2 text-muted">{{ claim.summary|default:"(no summary)" }}</div>
     </div>
   </div>
