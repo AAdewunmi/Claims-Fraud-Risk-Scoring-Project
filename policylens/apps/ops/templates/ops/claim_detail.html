@@ -1,0 +1,21 @@
+{% extends "ops/base.html" %}
+
+{% block title %}Claim #{{ claim.id }}, PolicyLens Ops{% endblock %}
+
+{% block content %}
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-1">Claim #{{ claim.id }}</h1>
+      <div class="text-muted">Claim detail placeholder.</div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div><strong>Policy:</strong> {{ claim.policy.policy_number }}</div>
+      <div><strong>Status:</strong> {{ claim.status }}</div>
+      <div><strong>Priority:</strong> {{ claim.priority }}</div>
+      <div class="mt-2 text-muted">{{ claim.summary|default:"(no summary)" }}</div>
+    </div>
+  </div>
+{% endblock %}
