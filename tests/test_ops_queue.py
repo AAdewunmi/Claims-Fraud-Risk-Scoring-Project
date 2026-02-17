@@ -9,8 +9,8 @@ from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from django.urls import reverse
+from django.utils import timezone
 
 from policylens.apps.claims.models import Claim, SlaClock
 from tests.factories import PolicyFactory
@@ -38,15 +38,33 @@ def test_ops_queue_filter_priority(client):
     client.force_login(user)
 
     policy = PolicyFactory()
-    c1 = Claim.objects.create(policy=policy, claim_type=Claim.Type.CLAIM, priority=Claim.Priority.HIGH, summary="H", created_by="x", status=Claim.Status.NEW)
-    c2 = Claim.objects.create(policy=policy, claim_type=Claim.Type.CLAIM, priority=Claim.Priority.LOW, summary="L", created_by="x", status=Claim.Status.NEW)
+    c1 = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.HIGH,
+        summary="H",
+        created_by="x",
+        status=Claim.Status.NEW,
+    )
+    c2 = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.LOW,
+        summary="L",
+        created_by="x",
+        status=Claim.Status.NEW,
+    )
 
-    SlaClock.objects.create(claim=c1, started_at=c1.created_at, due_at=timezone.now() + timedelta(days=1))
-    SlaClock.objects.create(claim=c2, started_at=c2.created_at, due_at=timezone.now() + timedelta(days=1))
+    SlaClock.objects.create(
+        claim=c1, started_at=c1.created_at, due_at=timezone.now() + timedelta(days=1)
+    )
+    SlaClock.objects.create(
+        claim=c2, started_at=c2.created_at, due_at=timezone.now() + timedelta(days=1)
+    )
 
     url = reverse("ops:queue")
     resp = client.get(url, data={"priority": "HIGH"})
     assert resp.status_code == 200
     html = resp.content.decode("utf-8")
-    assert "#{}".format(c1.id) in html
-    assert "#{}".format(c2.id) not in html
+    assert f"#{c1.id}" in html
+    assert f"#{c2.id}" not in html
