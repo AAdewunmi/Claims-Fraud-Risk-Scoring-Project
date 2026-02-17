@@ -11,125 +11,101 @@
 [![Test Coverage](https://img.shields.io/codecov/c/github/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)
 [![Coverage Status](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/branch/main/graph/badge.svg)](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)
 
-
 # UNDER CONSTRUCTION
 
 # PolicyLens: Insurance Claims Fraud Risk Scoring System
 
-PolicyLens is an insurance ops and compliance workflow tool built API-first for core workflows, with a server-rendered ops UI added later. It helps teams prioritise claims for review using fraud risk scoring, deterministic SLA rules, and exportable audit evidence, with a focus on testable domain services and production-minded delivery.
+PolicyLens is an insurance ops and compliance workflow tool built API-first for core workflows, with a server-rendered ops UI layered on top. It helps teams prioritise claims using fraud risk scoring, deterministic SLA rules, and exportable audit evidence.
 
-Work is in progress. The system runs end-to-end, but features, endpoints, and UI flows will continue to evolve as milestones are completed.
-
-## What PolicyLens does
-
-PolicyLens supports a reviewer workflow that brings risk and evidence into one place:
-
-- Claim and policy-change intake with structured metadata
-- Fraud risk scoring that persists a score, label, and reason codes
-- Reviewer queue prioritised by SLA state and priority, with filtering
-- Document upload and metadata capture
-- Internal notes and decision history
-- Append-only audit events for every action
-- Exportable audit evidence as JSON, with PDF export available in later milestones
-- Ops UI for queue and claim detail, built server-rendered with HTMX actions
+Status timestamp: **February 17, 2026**.
 
 ## Product stance
 
 API-first for core workflow, server-rendered UI for ops.
 
 - DRF serializers define the canonical contract.
-- Domain services implement behaviour shared by API and UI.
-- Ops UI uses Django Templates, Bootstrap 5.3, and HTMX without duplicating workflow logic.
+- Domain services implement workflow behaviour.
+- Ops UI uses Django templates + HTMX without duplicating workflow logic.
 
-## Current status
+## Milestone status (Implemented vs Planned)
 
-In progress.
+### Implemented
 
-Implemented so far (high level):
+- **Milestone W1 (January 2026):** Django/DRF project setup, healthcheck endpoint, Docker Compose dev stack.
+- **Milestone W2 (January 2026):** Claims/documents/notes/decisions APIs, role-based decision permissions, sample data seeding.
+- **Milestone W3 (February 2026):** Queue API ordering by SLA/priority, audit events API, JSON audit export, idempotency for write endpoints.
+- **Milestone W4 (February 2026):** Fraud scoring persistence (score/label/reason codes + model metadata), training and scoring management commands.
+- **Milestone W5 (started February 2026):** Ops UI shell and queue route; queue backend now uses shared queue builder logic.
 
-- Django + DRF project structure with a service layer for workflows
-- Core APIs for claims, documents, notes, decisions, queue, audit export
-- Fraud risk scoring service persisting score, label, and reason codes
-- Deterministic SLA classification and queue ordering
-- Ops UI pages for queue and claim detail, including HTMX actions
-- Docker Compose development setup (Django + Postgres)
-- GitHub Actions CI running lint, format checks, tests, and coverage threshold
-- Production-style packaging for local simulation (Gunicorn + Nginx)
+### Planned
 
-Planned next:
+- **Milestone W5 completion target (February 18-21, 2026):** Claim detail UI route/template wiring and HTMX actions.
+- **Milestone W6 target (late February 2026):** Evidence export polish and richer reviewer cues.
+- **Milestone W7 target (March 2026):** Production deployment runbook (Render/VPS), production compose profile, and demo script.
+- **Milestone W8 target (March 2026):** Performance checks and more edge-case/idempotency test coverage.
 
-- Fraud scoring governance polish, threshold documentation, and reviewer cues
-- Evidence export polish, PDF layout improvements, and completeness checks
-- Deployment target walkthrough (Render or small VPS) with a repeatable runbook
-- Additional tests covering failure modes, idempotency, and edge cases
-- Performance checks for queue queries and export endpoints
+## Capabilities by status
 
-## Week 3 operational features
+### Implemented now (as of February 17, 2026)
 
-### Ops queue
+- Claim and policy-change intake with structured metadata.
+- Fraud risk scoring endpoint and persisted score metadata.
+- Reviewer queue API prioritised by SLA and priority, with filtering.
+- Document upload and metadata capture.
+- Internal notes and decision history.
+- Append-only audit events.
+- Exportable audit evidence as JSON.
+- Ops queue page (server-rendered) behind login.
 
-Prioritised queue ordered by SLA and priority:
+### Planned (not fully shipped yet)
 
-- `GET /api/queue/claims/?status=&priority=&sla=breached|due_soon|ok`
+- Ops claim detail page with full timeline sections and actions.
+- HTMX-driven create actions (notes, docs, decisions, scoring) from the UI.
+- PDF audit export format.
+- Production simulation stack with dedicated prod compose file + Nginx/Gunicorn profile.
+- Demo script and docs/runbook directory.
 
-### Audit evidence
+## API surfaces
 
-- `GET /api/claims/{id}/audit-events/`
+### Implemented endpoints
 
-### Audit export
-
-Evidence-grade export bundle:
-
-- `GET /api/claims/{id}/audit-export/`
-
-Response includes:
-- claim, policy, policy holder
-- SLA clock
-- documents metadata, notes, decisions
-- audit event timeline
-
-### Idempotency for decisions
-
-Decision writes accept `Idempotency-Key`:
-
+- `POST /api/claims/`
+- `GET /api/claims/?status=&priority=`
+- `GET /api/claims/{id}/`
+- `POST /api/claims/{id}/documents/`
+- `POST /api/claims/{id}/notes/`
 - `POST /api/claims/{id}/decisions/`
+- `POST /api/claims/{id}/ml-score/`
+- `GET /api/queue/claims/`
+- `GET /api/queue/claims/?status=&priority=&sla=breached|due_soon|ok`
+- `GET /api/claims/{id}/audit-events/`
+- `GET /api/claims/{id}/audit-export/`
+- `GET /api/health/`
 
-Behaviour:
-- same key and same payload returns the same response
-- same key and different payload returns 409
+### Planned endpoints/formats
 
-### SLA operations
+- `GET /api/claims/{id}/audit-export/?format=pdf` (planned format extension)
 
-Backfill missing SLA clocks:
+## Ops UI surfaces
 
-```bash
-docker compose exec web python policylens/manage.py backfill_sla_clocks
-```
+### Implemented
 
-## Stack
+- `/ops/` (redirect to queue)
+- `/ops/queue/`
 
-- Django + Django REST Framework
-- PostgreSQL
-- Docker Compose
-- pytest + pytest-django + factory_boy
-- ruff + black
-- GitHub Actions CI
+### Planned
 
-## Repository layout
+- `/ops/claims/{id}/` claim detail page route and full template wiring
 
-Typical structure:
+## Repository layout (current)
 
-- `manage.py` Django management entrypoint (repo root)
-- `policylens/` Django project root
-- `policylens/apps/claims/` domain models, services, API, exports, risk scoring
-- `policylens/apps/ops/` server-rendered ops UI (templates + HTMX)
-- `policylens/apps/core/` shared utilities, health checks, management commands
-- `policylens/tests/` pytest test suite
-- `docs/` deployment notes, runbook, demo script
-- `docker/` entrypoint and Nginx configuration
-- `artifacts/` model artefacts (generated locally)
-
-Exact paths may change as the lab progresses.
+- `manage.py` Django management entrypoint
+- `policylens/` project and apps
+- `policylens/apps/claims/` domain models, services, API, export, ML, queue logic
+- `policylens/apps/ops/` server-rendered UI
+- `policylens/apps/core/` shared utilities (including idempotency)
+- `tests/` pytest suite
+- `artifacts/` local model artifacts
 
 ## Quickstart (development)
 
@@ -140,93 +116,58 @@ Exact paths may change as the lab progresses.
 ### Setup
 
 1. Create env file:
-   - cp .env.example .env
-2. Start the stack:
-   - docker compose up --build
-3. Run migrations:
-   - docker compose exec web python manage.py migrate --noinput
-4. Seed sample data
-   - docker compose exec web python manage.py seed_sample_data
-   - Note: seeding is deterministic and safe to re-run for demos.
-5. Create demo users:
-   - docker compose exec web python manage.py create_demo_users
-6. Open:
-   - API health: http://localhost:8000/api/health/
-   - Ops UI: http://localhost:8000/ops/
+   - `cp .env.example .env`
+2. Start stack:
+   - `docker compose up --build`
+3. (Optional, if needed) run migrations manually:
+   - `docker compose exec web python manage.py migrate --noinput`
+4. Seed sample data (also seeds reviewer/admin users):
+   - `docker compose exec web python manage.py seed_sample_data`
+5. Open:
+   - API health: `http://localhost:8000/api/health/`
+   - Ops UI: `http://localhost:8000/ops/`
 
-Login uses the demo users created by the command above.
+Demo users from seed command:
+- `reviewer1 / password123`
+- `admin1 / password123`
 
 ## Tests and quality gates
 
 Run tests:
 
-- docker compose exec web pytest -q --cov=policylens --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-fail-under=80
+- `docker compose exec web pytest -q --cov=policylens --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-fail-under=80`
 
 Run lint and format checks:
 
-- docker compose exec web ruff check .
-- docker compose exec web black --check .
+- `docker compose exec web python -m ruff check .`
+- `docker compose exec web python -m black . --check`
 
 CI enforces:
+
 - ruff
-- black --check
+- black `--check`
 - pytest with Postgres
-- coverage threshold (`>= 80%`) via `--cov-fail-under=80`
+- coverage threshold (`>= 80%`)
 
-Coverage reports are uploaded to Codecov from CI, and Codecov project status target is set to 80% in `codecov.yml`.
-Coverage excludes non-runtime files via `.coveragerc` (migrations, management commands, ASGI/WSGI entrypoints).
-View the coverage report here:
-```
-https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project
-```
+Coverage report:
 
-## Local production simulation
+- `https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project`
 
-A production-style stack is provided using Gunicorn and Nginx.
+## Planned production simulation track
 
-1. Copy env:
-   - cp .env.example .env
-2. Start production stack:
-   - docker compose -f docker-compose.prod.yml up --build
-3. Validate:
-   - curl http://localhost:8080/api/health/
+Planned artifacts (not present yet in this branch):
 
-## Key API surfaces (selected)
-
-These endpoints are treated as canonical and expanded throughout the lab:
-
-- POST /api/claims/
-- GET /api/claims/?status=&priority=
-- POST /api/claims/{id}/documents/
-- POST /api/claims/{id}/decisions/
-- POST /api/claims/{id}/ml-score/  (fraud risk scoring)
-- GET /api/queue/claims/
-- GET /api/queue/claims/?status=&priority=&sla=breached|due_soon|ok
-- GET /api/claims/{id}/audit-events/
-- GET /api/claims/{id}/audit-export/
-- GET /api/claims/{id}/audit-export/?format=pdf
-
-## Ops UI (selected)
-
-- /ops/queue/
-- /ops/claims/{id}/
-
-HTMX actions support note creation, document upload, decision recording, and risk scoring without page reload.
-
-## Demo
-
-After starting the production stack:
-
-- docker compose -f docker-compose.prod.yml exec web python manage.py create_demo_users
-- bash scripts/demo.sh
-
-The demo script runs a health check, creates sample data, triggers scoring, and fetches audit exports.
+- `docker-compose.prod.yml`
+- production web server profile (Gunicorn)
+- Nginx reverse proxy configuration
+- demo script (`scripts/demo.sh`)
+- deployment docs/runbook directory
 
 ## Non-goals
 
-- Replacing insurer core systems. This project focuses on the triage layer, fraud risk scoring, and audit evidence workflow.
-- Heavy ML research. The scoring component is intentionally lightweight and governance-oriented.
+- Replacing insurer core systems.
+- Heavy ML research (the scoring layer is intentionally lightweight and governance-oriented).
 
 ## License
 
-License
+MIT License. See `LICENSE`.
