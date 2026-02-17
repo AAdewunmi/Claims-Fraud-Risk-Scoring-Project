@@ -12,9 +12,95 @@
     </div>
   </div>
 
-  <div class="card shadow-sm">
+  <div class="card shadow-sm mb-3">
     <div class="card-body">
-      <div class="text-muted">Queue data wiring lands Tuesday.</div>
+      <form class="row g-2 align-items-end" method="get">
+        <div class="col-12 col-md-3">
+          <label class="form-label small text-muted">Status</label>
+          <select class="form-select" name="status">
+            <option value="" {% if filters.status == "" %}selected{% endif %}>All</option>
+            <option value="NEW" {% if filters.status == "NEW" %}selected{% endif %}>New</option>
+            <option value="IN_REVIEW" {% if filters.status == "IN_REVIEW" %}selected{% endif %}>In review</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label small text-muted">Priority</label>
+          <select class="form-select" name="priority">
+            <option value="" {% if filters.priority == "" %}selected{% endif %}>All</option>
+            <option value="HIGH" {% if filters.priority == "HIGH" %}selected{% endif %}>High</option>
+            <option value="NORMAL" {% if filters.priority == "NORMAL" %}selected{% endif %}>Normal</option>
+            <option value="LOW" {% if filters.priority == "LOW" %}selected{% endif %}>Low</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label small text-muted">SLA</label>
+          <select class="form-select" name="sla">
+            <option value="" {% if filters.sla == "" %}selected{% endif %}>All</option>
+            <option value="breached" {% if filters.sla == "breached" %}selected{% endif %}>Breached</option>
+            <option value="due_soon" {% if filters.sla == "due_soon" %}selected{% endif %}>Due soon</option>
+            <option value="ok" {% if filters.sla == "ok" %}selected{% endif %}>OK</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-3 d-flex gap-2">
+          <button class="btn btn-primary w-100" type="submit">Apply</button>
+          <a class="btn btn-outline-secondary w-100" href="{% url 'ops:queue' %}">Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      {% if items|length == 0 %}
+        <div class="p-4">
+          <div class="h5 mb-1">No claims to review</div>
+          <div class="text-muted">Filters may be hiding items. Reset filters or seed sample data.</div>
+        </div>
+      {% else %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th scope="col" class="ps-3">Rank</th>
+                <th scope="col">Claim</th>
+                <th scope="col">Policy</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Status</th>
+                <th scope="col">SLA</th>
+                <th scope="col" class="text-end pe-3">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in items %}
+                <tr>
+                  <td class="ps-3 fw-semibold">{{ c.queue_rank }}</td>
+                  <td>
+                    <a class="text-decoration-none fw-semibold" href="{% url 'ops:claim-detail' claim_id=c.id %}">
+                      #{{ c.id }}
+                    </a>
+                    <div class="text-muted small text-truncate" style="max-width: 420px;">{{ c.summary|default:"(no summary)" }}</div>
+                  </td>
+                  <td class="text-muted">{{ c.policy.policy_number }}</td>
+                  <td>
+                    <span class="badge text-bg-secondary">{{ c.priority }}</span>
+                  </td>
+                  <td>{{ c.status }}</td>
+                  <td class="text-muted">
+                    {% if c.is_breached == 1 %}
+                      <span class="badge text-bg-danger">Breached</span>
+                    {% elif c.is_due_soon == 1 %}
+                      <span class="badge text-bg-warning">Due soon</span>
+                    {% else %}
+                      <span class="badge text-bg-success">OK</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end pe-3 text-muted small">{{ c.created_at }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
     </div>
   </div>
 {% endblock %}
