@@ -1,70 +1,196 @@
+<!-- path: policylens/apps/ops/templates/ops/claim_detail.html -->
 {% extends "ops/base.html" %}
+{% load static %}
 
 {% block title %}Claim #{{ claim.id }}, PolicyLens Ops{% endblock %}
 
 {% block content %}
-  <div class="mb-3">
-    <a class="text-decoration-none small" href="{% url 'ops:queue' %}">&larr; Back to queue</a>
-  </div>
-
-  <div class="d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-start justify-content-between mb-3">
     <div>
+      <div class="text-muted small">
+        <a href="{% url 'ops:queue' %}" class="text-decoration-none">Queue</a>
+        <span class="mx-2">/</span>
+        <span>Claim #{{ claim.id }}</span>
+      </div>
       <h1 class="h3 mb-1">Claim #{{ claim.id }}</h1>
-      <div class="text-muted">Claim detail placeholder.</div>
+      <div class="text-muted">
+        Policy <span class="fw-semibold">{{ claim.policy.policy_number }}</span>
+        <span class="mx-2">·</span>
+        {{ claim.status }}
+        <span class="mx-2">·</span>
+        {{ claim.priority }}
+      </div>
     </div>
-    <div>
-      <span class="badge text-bg-secondary">{{ claim.priority }}</span>
-      {% if claim.status == "DECIDED" %}
-        <span class="badge text-bg-success">Decided</span>
-      {% elif claim.status == "IN_REVIEW" %}
-        <span class="badge text-bg-warning">In review</span>
-      {% else %}
-        <span class="badge text-bg-primary">New</span>
-      {% endif %}
+    <div class="text-end">
+      <div class="small text-muted">Created</div>
+      <div class="fw-semibold">{{ claim.created_at }}</div>
     </div>
   </div>
 
-  <div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
-      <div class="card shadow-sm h-100">
+  <div class="row g-3">
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm mb-3">
         <div class="card-body">
-          <div class="text-muted small">Documents</div>
-          <div class="h4 mb-0">{{ claim.documents.all|length }}</div>
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="h6 mb-0">SLA</div>
+            {% if claim.sla_clock and claim.sla_clock.breached_at %}
+              <span class="badge text-bg-danger">Breached</span>
+            {% else %}
+              <span class="badge text-bg-success">Active</span>
+            {% endif %}
+          </div>
+          <hr class="my-3">
+          {% if claim.sla_clock %}
+            <div class="small text-muted">Due at</div>
+            <div class="fw-semibold">{{ claim.sla_clock.due_at|default:"(not set)" }}</div>
+            {% if claim.sla_clock.breached_at %}
+              <div class="small text-muted mt-2">Breached at</div>
+              <div class="fw-semibold">{{ claim.sla_clock.breached_at }}</div>
+            {% endif %}
+          {% else %}
+            <div class="text-muted">No SLA clock found.</div>
+          {% endif %}
         </div>
       </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <div class="text-muted small">Notes</div>
-          <div class="h4 mb-0">{{ claim.notes.all|length }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <div class="text-muted small">Decisions</div>
-          <div class="h4 mb-0">{{ claim.decisions.all|length }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <div class="text-muted small">Audit Events</div>
-          <div class="h4 mb-0">{{ claim.audit_events.all|length }}</div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <div><strong>Policy:</strong> {{ claim.policy.policy_number }}</div>
-      <div><strong>Holder:</strong> {{ claim.policy.holder.full_name }}</div>
-      <div><strong>Created:</strong> {{ claim.created_at }}</div>
-      <div class="mt-2 text-muted">{{ claim.summary|default:"(no summary)" }}</div>
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="h6 mb-0">ML completeness</div>
+            {% if claim.ml_score %}
+              {% if claim.ml_score.label == "LIKELY_INCOMPLETE" %}
+                <span class="badge text-bg-warning">Likely incomplete</span>
+              {% else %}
+                <span class="badge text-bg-success">Likely complete</span>
+              {% endif %}
+            {% else %}
+              <span class="badge text-bg-secondary">Not scored</span>
+            {% endif %}
+          </div>
+          <hr class="my-3">
+          {% if claim.ml_score %}
+            <div class="small text-muted">Score</div>
+            <div class="fw-semibold">{{ claim.ml_score.score }}</div>
+
+            <div class="small text-muted mt-2">Reason codes</div>
+            {% if claim.ml_score.reason_codes|length == 0 %}
+              <div class="text-muted">(none)</div>
+            {% else %}
+              <ul class="mb-0">
+                {% for r in claim.ml_score.reason_codes %}
+                  <li class="small">{{ r }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+
+            <div class="small text-muted mt-2">Model</div>
+            <div class="text-muted small">{{ claim.ml_score.model_version }}</div>
+          {% else %}
+            <div class="text-muted">No score recorded yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-8">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="h6 mb-2">Summary</div>
+          <div class="text-muted">{{ claim.summary|default:"(no summary)" }}</div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="h6 mb-2">Documents</div>
+          {% if claim.documents.all|length == 0 %}
+            <div class="text-muted">No documents uploaded.</div>
+          {% else %}
+            <div class="table-responsive">
+              <table class="table mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Filename</th>
+                    <th>Type</th>
+                    <th class="text-end">Bytes</th>
+                    <th class="text-end">Uploaded</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for d in claim.documents.all %}
+                    <tr>
+                      <td class="fw-semibold">{{ d.original_filename }}</td>
+                      <td class="text-muted small">{{ d.content_type }}</td>
+                      <td class="text-end text-muted small">{{ d.size_bytes }}</td>
+                      <td class="text-end text-muted small">{{ d.uploaded_at }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="h6 mb-2">Notes</div>
+          {% if claim.notes.all|length == 0 %}
+            <div class="text-muted">No notes yet.</div>
+          {% else %}
+            <div class="vstack gap-2">
+              {% for n in claim.notes.all %}
+                <div class="border rounded p-2 bg-white">
+                  <div class="small text-muted">{{ n.created_at }} · {{ n.created_by|default:"(unknown)" }}</div>
+                  <div>{{ n.body }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="h6 mb-2">Decisions</div>
+          {% if claim.decisions.all|length == 0 %}
+            <div class="text-muted">No decisions recorded.</div>
+          {% else %}
+            <div class="vstack gap-2">
+              {% for d in claim.decisions.all %}
+                <div class="border rounded p-2 bg-white">
+                  <div class="small text-muted">{{ d.decided_at }} · {{ d.decided_by|default:"(unknown)" }}</div>
+                  <div class="fw-semibold">{{ d.decision }}</div>
+                  {% if d.notes %}
+                    <div class="text-muted">{{ d.notes }}</div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="h6 mb-2">Audit timeline</div>
+          {% if claim.audit_events.all|length == 0 %}
+            <div class="text-muted">No audit events recorded.</div>
+          {% else %}
+            <div class="vstack gap-2">
+              {% for e in claim.audit_events.all %}
+                <div class="border rounded p-2 bg-white">
+                  <div class="small text-muted">{{ e.created_at }} · {{ e.actor|default:"(unknown)" }}</div>
+                  <div class="fw-semibold">{{ e.event_type }}</div>
+                  {% if e.payload %}
+                    <pre class="small mb-0 mt-2 bg-body-tertiary p-2 rounded">{{ e.payload|safe }}</pre>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </div>
 {% endblock %}
