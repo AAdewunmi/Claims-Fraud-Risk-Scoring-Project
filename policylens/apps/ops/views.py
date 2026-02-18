@@ -39,7 +39,7 @@ def queue_view(request: HttpRequest) -> HttpResponse:
 
     items = list(build_queue_queryset(status=status, priority=priority, sla_filter=sla_filter))
     for idx, obj in enumerate(items, start=1):
-        setattr(obj, "queue_rank", idx)
+        obj.queue_rank = idx
 
     return render(
         request,
@@ -60,8 +60,9 @@ def queue_view(request: HttpRequest) -> HttpResponse:
 def claim_detail_view(request: HttpRequest, claim_id: int) -> HttpResponse:
     """Render claim detail page with timeline sections."""
     claim = get_object_or_404(
-        Claim.objects.select_related("policy", "policy__holder", "sla_clock", "ml_score")
-        .prefetch_related(
+        Claim.objects.select_related(
+            "policy", "policy__holder", "sla_clock", "ml_score"
+        ).prefetch_related(
             Prefetch("documents", queryset=ClaimDocument.objects.order_by("uploaded_at")),
             Prefetch("notes", queryset=InternalNote.objects.order_by("created_at")),
             Prefetch("decisions", queryset=ReviewDecision.objects.order_by("decided_at")),
