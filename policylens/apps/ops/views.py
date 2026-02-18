@@ -3,17 +3,24 @@
 Ops views (server-rendered).
 
 Week 5:
-- Queue view reuses domain queue builder.
-- Claim detail page lands Wednesday.
+- Queue view uses domain queue logic.
+- Claim detail view renders full workflow timeline.
 """
 
 from __future__ import annotations
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Prefetch
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from policylens.apps.claims.models import Claim
+from policylens.apps.claims.models import (
+    AuditEvent,
+    Claim,
+    ClaimDocument,
+    InternalNote,
+    ReviewDecision,
+)
 from policylens.apps.claims.queue import build_queue_queryset
 
 
@@ -32,7 +39,7 @@ def queue_view(request: HttpRequest) -> HttpResponse:
 
     items = list(build_queue_queryset(status=status, priority=priority, sla_filter=sla_filter))
     for idx, obj in enumerate(items, start=1):
-        obj.queue_rank = idx
+        setattr(obj, "queue_rank", idx)
 
     return render(
         request,
@@ -51,6 +58,20 @@ def queue_view(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def claim_detail_view(request: HttpRequest, claim_id: int) -> HttpResponse:
-    """Render claim detail shape with basic claim fetch only."""
-    claim = get_object_or_404(Claim, pk=claim_id)
-    return render(request, "ops/claim_detail.html", context={"claim": claim})
+    """Render claim detail page with timeline sections."""
+    claim = get_object_or_404(
+        Claim.objects.select_related("policy", "policy__holder", "sla_clock", "ml_score")
+        .prefetch_related(
+            Prefetch("documents", queryset=ClaimDocument.objects.order_by("uploaded_at")),
+            Prefetch("notes", queryset=InternalNote.objects.order_by("created_at")),
+            Prefetch("decisions", queryset=ReviewDecision.objects.order_by("decided_at")),
+            Prefetch("audit_events", queryset=AuditEvent.objects.order_by("created_at")),
+        ),
+        pk=claim_id,
+    )
+
+    return render(
+        request,
+        "ops/claim_detail.html",
+        context={"page_title": f"Claim #{claim.id}", "claim": claim},
+    )
