@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404, render
 from policylens.apps.claims import services
 from policylens.apps.claims.ml.scoring import ModelNotReady, score_claim
 from policylens.apps.claims.models import Claim
-from policylens.apps.ops.forms import AddNoteForm, DecisionForm
+from policylens.apps.ops.forms import AddNoteForm
 
 
 def _actor(request: HttpRequest) -> str:
