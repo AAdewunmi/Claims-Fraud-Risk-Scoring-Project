@@ -22,7 +22,14 @@ def test_htmx_add_note_creates_note_and_returns_partial(client):
     client.force_login(user)
 
     policy = PolicyFactory()
-    claim = Claim.objects.create(policy=policy, claim_type=Claim.Type.CLAIM, priority=Claim.Priority.NORMAL, summary="HTMX", created_by="seed", status=Claim.Status.NEW)
+    claim = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.NORMAL,
+        summary="HTMX",
+        created_by="seed",
+        status=Claim.Status.NEW,
+    )
 
     url = reverse("ops:htmx-add-note", kwargs={"claim_id": claim.id})
     resp = client.post(url, data={"body": "First note"}, HTTP_HX_REQUEST="true")

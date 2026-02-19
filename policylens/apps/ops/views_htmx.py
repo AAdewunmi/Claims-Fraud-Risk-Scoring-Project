@@ -34,7 +34,9 @@ def htmx_add_note(request: HttpRequest, claim_id: int) -> HttpResponse:
         claim.refresh_from_db()
 
     claim = Claim.objects.prefetch_related("notes").get(pk=claim_id)
-    return render(request, "ops/partials/notes_list.html", context={"claim": claim, "form": AddNoteForm()})
+    return render(
+        request, "ops/partials/notes_list.html", context={"claim": claim, "form": AddNoteForm()}
+    )
 
 
 @login_required
