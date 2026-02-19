@@ -1,0 +1,34 @@
+<!-- path: policylens/apps/ops/templates/ops/partials/notes_list.html -->
+<div class="d-flex align-items-center justify-content-between mb-2">
+  <div class="h6 mb-0">Notes</div>
+</div>
+
+<form
+  hx-post="{% url 'ops:htmx-add-note' claim_id=claim.id %}"
+  hx-target="#notes-panel"
+  hx-swap="outerHTML"
+  class="mb-3"
+  method="post"
+>
+  {% csrf_token %}
+  <div class="mb-2">
+    <textarea name="body" class="form-control" rows="3" placeholder="Add a note for reviewers">{{ form.body.value|default:"" }}</textarea>
+    {% if form.errors.body %}
+      <div class="text-danger small mt-1">{{ form.errors.body.0 }}</div>
+    {% endif %}
+  </div>
+  <button class="btn btn-primary btn-sm" type="submit">Add note</button>
+</form>
+
+{% if claim.notes.all|length == 0 %}
+  <div class="text-muted">No notes yet.</div>
+{% else %}
+  <div class="vstack gap-2">
+    {% for n in claim.notes.all %}
+      <div class="border rounded p-2 bg-white">
+        <div class="small text-muted">{{ n.created_at }} · {{ n.created_by|default:"(unknown)" }}</div>
+        <div>{{ n.body }}</div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
