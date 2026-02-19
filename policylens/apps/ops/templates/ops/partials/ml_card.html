@@ -1,0 +1,44 @@
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="h6 mb-0">ML completeness</div>
+      {% if claim.ml_score %}
+        {% if claim.ml_score.label == "LIKELY_INCOMPLETE" %}
+          <span class="badge text-bg-warning">Likely incomplete</span>
+        {% else %}
+          <span class="badge text-bg-success">Likely complete</span>
+        {% endif %}
+      {% else %}
+        <span class="badge text-bg-secondary">Not scored</span>
+      {% endif %}
+    </div>
+    <hr class="my-3">
+
+    {% if error %}
+      <div class="alert alert-warning py-2 mb-3" role="alert">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    {% if claim.ml_score %}
+      <div class="small text-muted">Score</div>
+      <div class="fw-semibold">{{ claim.ml_score.score }}</div>
+
+      <div class="small text-muted mt-2">Reason codes</div>
+      {% if claim.ml_score.reason_codes|length == 0 %}
+        <div class="text-muted">(none)</div>
+      {% else %}
+        <ul class="mb-0">
+          {% for reason in claim.ml_score.reason_codes %}
+            <li class="small">{{ reason }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div class="small text-muted mt-2">Model</div>
+      <div class="text-muted small">{{ claim.ml_score.model_version }}</div>
+    {% else %}
+      <div class="text-muted">No score recorded yet.</div>
+    {% endif %}
+  </div>
+</div>
