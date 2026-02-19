@@ -1,0 +1,27 @@
+<div class="h6 mb-2">Documents</div>
+{% if claim.documents.all|length == 0 %}
+  <div class="text-muted">No documents uploaded.</div>
+{% else %}
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Filename</th>
+          <th>Type</th>
+          <th class="text-end">Bytes</th>
+          <th class="text-end">Uploaded</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in claim.documents.all %}
+          <tr>
+            <td class="fw-semibold">{{ d.original_filename }}</td>
+            <td class="text-muted small">{{ d.content_type }}</td>
+            <td class="text-end text-muted small">{{ d.size_bytes }}</td>
+            <td class="text-end text-muted small">{{ d.uploaded_at }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
