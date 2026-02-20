@@ -22,6 +22,7 @@ from policylens.apps.claims.models import (
     ReviewDecision,
 )
 from policylens.apps.claims.queue import build_queue_queryset
+from policylens.apps.ops.forms import AddNoteForm, DecisionForm
 
 
 @login_required
@@ -65,7 +66,7 @@ def claim_detail_view(request: HttpRequest, claim_id: int) -> HttpResponse:
         ).prefetch_related(
             Prefetch("documents", queryset=ClaimDocument.objects.order_by("uploaded_at")),
             Prefetch("notes", queryset=InternalNote.objects.order_by("created_at")),
-            Prefetch("decisions", queryset=ReviewDecision.objects.order_by("decided_at")),
+            Prefetch("decisions", queryset=ReviewDecision.objects.order_by("-decided_at")),
             Prefetch("audit_events", queryset=AuditEvent.objects.order_by("created_at")),
         ),
         pk=claim_id,
@@ -74,5 +75,10 @@ def claim_detail_view(request: HttpRequest, claim_id: int) -> HttpResponse:
     return render(
         request,
         "ops/claim_detail.html",
-        context={"page_title": f"Claim #{claim.id}", "claim": claim},
+        context={
+            "page_title": f"Claim #{claim.id}",
+            "claim": claim,
+            "note_form": AddNoteForm(),
+            "decision_form": DecisionForm(),
+        },
     )
