@@ -1,4 +1,60 @@
-<div class="h6 mb-2">Decisions</div>
-<div class="text-muted small">
-  Decisions list partial placeholder. Full HTMX decisions UI will be implemented tomorrow.
+<!-- path: policylens/apps/ops/templates/ops/partials/decisions_list.html -->
+<div id="decisions-panel">
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <div class="h6 mb-0">Decisions</div>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-warning py-2 mb-3">
+      <div class="small">{{ error }}</div>
+    </div>
+  {% endif %}
+  {% if form.non_field_errors %}
+    <div class="alert alert-warning py-2 mb-3">
+      {% for err in form.non_field_errors %}
+        <div class="small">{{ err }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form
+    hx-post="{% url 'ops:htmx-add-decision' claim_id=claim.id %}"
+    hx-target="#decisions-panel"
+    hx-swap="outerHTML"
+    class="mb-3"
+    method="post"
+  >
+    {% csrf_token %}
+    <div class="row g-2">
+      <div class="col-12 col-md-4">
+        <select name="decision" class="form-select" required>
+          {% for value,label in form.fields.decision.choices %}
+            <option value="{{ value }}" {% if form.data.decision == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-8">
+        <textarea name="notes" class="form-control" rows="2" placeholder="Decision notes (optional)">{{ form.data.notes|default:"" }}</textarea>
+      </div>
+      <div class="col-12 d-grid">
+        <button class="btn btn-primary btn-sm" type="submit">Record decision</button>
+      </div>
+    </div>
+  </form>
+
+  {% if claim.decisions.all|length == 0 %}
+    <div class="text-muted">No decisions recorded.</div>
+  {% else %}
+    <div class="vstack gap-2">
+      {% for d in claim.decisions.all %}
+        <div class="border rounded p-2 bg-white">
+          <div class="small text-muted">{{ d.decided_at }} · {{ d.decided_by|default:"(unknown)" }}</div>
+          <div class="fw-semibold">{{ d.decision }}</div>
+          {% if d.notes %}
+            <div class="text-muted">{{ d.notes }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 </div>
