@@ -43,15 +43,17 @@
           {% if claim.sla_clock %}
             <div class="small text-muted">Due at</div>
             <div class="fw-semibold">{{ claim.sla_clock.due_at|default:"(not set)" }}</div>
+            {% if claim.sla_clock.breached_at %}
+              <div class="small text-muted mt-2">Breached at</div>
+              <div class="fw-semibold">{{ claim.sla_clock.breached_at }}</div>
+            {% endif %}
           {% else %}
             <div class="text-muted">No SLA clock found.</div>
           {% endif %}
         </div>
       </div>
 
-      <div id="ml-card">
-        {% include "ops/partials/ml_card.html" %}
-      </div>
+      {% include "ops/partials/ml_card.html" %}
     </div>
 
     <div class="col-12 col-lg-8">
@@ -64,13 +66,22 @@
 
       <div class="card shadow-sm mb-3">
         <div class="card-body">
-          <div id="notes-panel">
-            {% include "ops/partials/notes_list.html" with form=None %}
-          </div>
+          {% include "ops/partials/documents_table.html" %}
         </div>
       </div>
 
-      <!-- Documents + Decisions HTMX added Friday to keep Thursday scope focused -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          {% include "ops/partials/notes_list.html" %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          {% include "ops/partials/decisions_list.html" %}
+        </div>
+      </div>
+
       <div class="card shadow-sm">
         <div class="card-body">
           <div class="h6 mb-2">Audit timeline</div>
@@ -82,6 +93,9 @@
                 <div class="border rounded p-2 bg-white">
                   <div class="small text-muted">{{ e.created_at }} · {{ e.actor|default:"(unknown)" }}</div>
                   <div class="fw-semibold">{{ e.event_type }}</div>
+                  {% if e.payload %}
+                    <pre class="small mb-0 mt-2 bg-body-tertiary p-2 rounded">{{ e.payload|safe }}</pre>
+                  {% endif %}
                 </div>
               {% endfor %}
             </div>
