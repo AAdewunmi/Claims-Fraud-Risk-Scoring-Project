@@ -297,7 +297,7 @@ def test_htmx_add_decision_success_creates_decision(client):
 
 @pytest.mark.django_db
 def test_htmx_add_decision_domain_rule_violation_sets_error(client, monkeypatch):
-    """Domain rule failures should be rendered as decision error context."""
+    """Domain rule failures should be returned as form non-field errors."""
     user = User.objects.create_user(username="ops_htmx_user_decision_rule", password="password123")
     client.force_login(user)
 
@@ -333,4 +333,56 @@ def test_htmx_add_decision_domain_rule_violation_sets_error(client, monkeypatch)
 
     assert resp.status_code == 200
     assert captured["template_name"] == "ops/partials/decisions_list.html"
-    assert captured["context"]["error"] == "Claim is already decided."
+    form = captured["context"]["form"]
+    assert form.data["decision"] == ReviewDecision.Decision.APPROVE
+    assert form.data["notes"] == "Approve now"
+    assert form.non_field_errors() == ["Claim is already decided."]
+
+
+@pytest.mark.django_db
+def test_htmx_add_decision_returns_decisions_in_reverse_decided_at_order(client, monkeypatch):
+    """Rendered decision history should be sorted by newest decision first."""
+    user = User.objects.create_user(username="ops_htmx_user_decision_order", password="password123")
+    client.force_login(user)
+
+    policy = PolicyFactory()
+    claim = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.NORMAL,
+        summary="HTMX decision history order",
+        created_by="seed",
+        status=Claim.Status.NEW,
+    )
+
+    services.add_decision(
+        claim=claim,
+        decision=ReviewDecision.Decision.REQUEST_INFO,
+        notes="First decision",
+        actor=user.username,
+    )
+    services.add_decision(
+        claim=claim,
+        decision=ReviewDecision.Decision.REQUEST_INFO,
+        notes="Second decision",
+        actor=user.username,
+    )
+
+    captured = {}
+
+    def fake_render(request, template_name, context):
+        captured["template_name"] = template_name
+        captured["context"] = context
+        return HttpResponse("ok")
+
+    monkeypatch.setattr(views_htmx, "render", fake_render)
+
+    url = reverse("ops:htmx-add-decision", kwargs={"claim_id": claim.id})
+    resp = client.get(url, HTTP_HX_REQUEST="true")
+
+    assert resp.status_code == 200
+    assert captured["template_name"] == "ops/partials/decisions_list.html"
+    decisions = list(captured["context"]["claim"].decisions.all())
+    assert len(decisions) == 2
+    assert decisions[0].notes == "Second decision"
+    assert decisions[1].notes == "First decision"
