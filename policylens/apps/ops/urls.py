@@ -16,6 +16,7 @@ app_name = "ops"
 urlpatterns = [
     path("", ops_home, name="home"),
     path("queue/", queue_view, name="queue"),
+    # Claim detail page (server-rendered)
     path("claims/<int:claim_id>/", claim_detail_view, name="claim-detail"),
     # HTMX endpoints
     path("claims/<int:claim_id>/htmx/notes/add/", htmx_add_note, name="htmx-add-note"),
