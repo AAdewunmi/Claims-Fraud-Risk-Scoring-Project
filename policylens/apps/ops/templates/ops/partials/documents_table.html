@@ -1,27 +1,59 @@
-<div class="h6 mb-2">Documents</div>
-{% if claim.documents.all|length == 0 %}
-  <div class="text-muted">No documents uploaded.</div>
-{% else %}
-  <div class="table-responsive">
-    <table class="table mb-0 align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>Filename</th>
-          <th>Type</th>
-          <th class="text-end">Bytes</th>
-          <th class="text-end">Uploaded</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for d in claim.documents.all %}
-          <tr>
-            <td class="fw-semibold">{{ d.original_filename }}</td>
-            <td class="text-muted small">{{ d.content_type }}</td>
-            <td class="text-end text-muted small">{{ d.size_bytes }}</td>
-            <td class="text-end text-muted small">{{ d.uploaded_at }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<!-- path: policylens/apps/ops/templates/ops/partials/documents_table.html -->
+<div id="documents-panel">
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <div class="h6 mb-0">Documents</div>
   </div>
-{% endif %}
+
+  {% if error %}
+    <div class="alert alert-warning py-2 mb-3">
+      <div class="small">{{ error }}</div>
+    </div>
+  {% endif %}
+
+  <form
+    hx-post="{% url 'ops:htmx-upload-document' claim_id=claim.id %}"
+    hx-target="#documents-panel"
+    hx-swap="outerHTML"
+    class="row g-2 mb-3"
+    method="post"
+    enctype="multipart/form-data"
+  >
+    {% csrf_token %}
+    <div class="col-12 col-md-6">
+      <input class="form-control" type="file" name="file" required>
+    </div>
+    <div class="col-12 col-md-4">
+      <input class="form-control" type="text" name="original_filename" placeholder="Original filename" required>
+    </div>
+    <div class="col-12 col-md-2 d-grid">
+      <button class="btn btn-outline-primary" type="submit">Upload</button>
+    </div>
+  </form>
+
+  {% if claim.documents.all|length == 0 %}
+    <div class="text-muted">No documents uploaded.</div>
+  {% else %}
+    <div class="table-responsive">
+      <table class="table mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Filename</th>
+            <th>Type</th>
+            <th class="text-end">Bytes</th>
+            <th class="text-end">Uploaded</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in claim.documents.all %}
+            <tr>
+              <td class="fw-semibold">{{ d.original_filename }}</td>
+              <td class="text-muted small">{{ d.content_type }}</td>
+              <td class="text-end text-muted small">{{ d.size_bytes }}</td>
+              <td class="text-end text-muted small">{{ d.uploaded_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
