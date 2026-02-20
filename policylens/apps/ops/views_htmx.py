@@ -11,12 +11,13 @@ from __future__ import annotations
 
 from django.contrib.auth.decorators import login_required
 from django.core.files.uploadedfile import UploadedFile
+from django.db.models import Prefetch
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 
 from policylens.apps.claims import services
 from policylens.apps.claims.ml.scoring import ModelNotReady, score_claim
-from policylens.apps.claims.models import Claim
+from policylens.apps.claims.models import Claim, ReviewDecision
 from policylens.apps.ops.forms import AddNoteForm, DecisionForm
 
 
@@ -95,7 +96,6 @@ def htmx_add_decision(request: HttpRequest, claim_id: int) -> HttpResponse:
     """Record a decision and return refreshed decisions partial."""
     claim = get_object_or_404(Claim, pk=claim_id)
     form = DecisionForm(request.POST or None)
-    error = None
 
     if request.method == "POST" and form.is_valid():
         try:
@@ -105,12 +105,15 @@ def htmx_add_decision(request: HttpRequest, claim_id: int) -> HttpResponse:
                 notes=form.cleaned_data.get("notes") or "",
                 actor=_actor(request),
             )
+            form = DecisionForm()
         except services.DomainRuleViolation as exc:
-            error = str(exc)
+            form.add_error(None, str(exc))
 
-    claim = Claim.objects.prefetch_related("decisions").get(pk=claim_id)
+    claim = Claim.objects.prefetch_related(
+        Prefetch("decisions", queryset=ReviewDecision.objects.order_by("-decided_at"))
+    ).get(pk=claim_id)
     return render(
         request,
         "ops/partials/decisions_list.html",
-        context={"claim": claim, "form": DecisionForm(), "error": error},
+        context={"claim": claim, "form": form},
     )
