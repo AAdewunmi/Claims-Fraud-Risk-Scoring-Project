@@ -1,0 +1,27 @@
+{% extends "site/base.html" %}
+
+{% block title %}Landing | PolicyLens{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1>PolicyLens</h1>
+    <p class="lead">
+      Sign in to the workspace aligned to your role. PolicyLens uses centralised authentication and routes each user
+      to the correct Admin, Reviewer, or Customer experience.
+    </p>
+
+    <div class="button-row">
+      <a class="button" href="/login/admin/">Admin</a>
+      <a class="button" href="/login/reviewer/">Reviewer</a>
+      <a class="button" href="/login/customer/">Customer</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Platform maturity</h2>
+    <p>
+      This release introduces a dedicated public gateway with role-aware routing. In progress: stricter authorisation
+      policies, stronger audit trails, and reliability hardening across all user surfaces.
+    </p>
+  </section>
+{% endblock %}

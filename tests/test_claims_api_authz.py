@@ -2,7 +2,7 @@
 """
 Authorization and authentication tests for PolicyLens API.
 
-Week 2 verifies:
+Sprint 2 verifies:
 - Unauthenticated requests are rejected by default
 - Decisions require reviewer or admin role
 """

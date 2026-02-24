@@ -2,7 +2,7 @@
 """
 Queue building logic for ops review.
 
-Ordering rules (Week 3):
+Ordering rules (Sprint 3):
 1. SLA breached first
 2. SLA due soon (within N hours) next
 3. Higher priority first

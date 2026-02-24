@@ -2,7 +2,7 @@
 """
 Tests for SLA rules and SLA clock creation.
 
-Week 3 validates determinism:
+Sprint 3 validates determinism:
 - due_at depends on claim.created_at and priority
 - SLA clock is created when a claim is created
 """

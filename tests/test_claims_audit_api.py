@@ -2,7 +2,7 @@
 """
 Integration tests for audit events API.
 
-Week 2 ensures audit events are queryable evidence for ops workflows.
+Sprint 2 ensures audit events are queryable evidence for ops workflows.
 """
 
 from __future__ import annotations

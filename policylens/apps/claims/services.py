@@ -3,7 +3,7 @@
 Domain services for claims.
 
 This module centralises business behaviour so that API and UI share the same logic.
-Week 3 adds SLA clock creation as part of claim creation.
+Sprint 3 adds SLA clock creation as part of claim creation.
 """
 
 from __future__ import annotations
@@ -172,7 +172,7 @@ def add_decision(
         decided_by=actor,
     )
 
-    # Minimal deterministic workflow rules for Week 2.
+    # Minimal deterministic workflow rules for Sprint 2.
     if decision == ReviewDecision.Decision.REQUEST_INFO:
         claim.status = Claim.Status.IN_REVIEW
     else:

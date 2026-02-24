@@ -2,11 +2,11 @@
 """
 Seed deterministic sample data for local development.
 
-Week 2 adds:
+Sprint 2 adds:
 - Default reviewer and admin groups
 - Sample users assigned to those roles
 
-This command is designed for repeatable demos and for week 5 UI development.
+This command is designed for repeatable demos and for sprint 5 UI development.
 """
 
 from __future__ import annotations

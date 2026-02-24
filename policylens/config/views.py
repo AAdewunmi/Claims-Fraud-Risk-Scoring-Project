@@ -2,7 +2,7 @@
 """
 Project-level views.
 
-Week 1 includes a minimal healthcheck to validate container boot and routing.
+Sprint 1 includes a minimal healthcheck to validate container boot and routing.
 """
 
 from django.http import JsonResponse

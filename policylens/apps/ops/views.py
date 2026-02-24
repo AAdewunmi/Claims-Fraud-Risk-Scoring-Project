@@ -2,7 +2,7 @@
 """
 Ops views (server-rendered).
 
-Week 5:
+Sprint 5:
 - Queue view uses domain queue logic.
 - Claim detail view renders full workflow timeline.
 """

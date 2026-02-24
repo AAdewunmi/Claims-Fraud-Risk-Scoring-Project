@@ -2,7 +2,7 @@
 """
 API permission classes for PolicyLens roles.
 
-Week 2 introduces two roles:
+Sprint 2 introduces two roles:
 - reviewer: can action claims (decisions, notes, documents)
 - admin: can do everything reviewers can, plus future administrative actions
 
