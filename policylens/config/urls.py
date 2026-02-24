@@ -8,8 +8,12 @@ from django.urls import include, path
 
 from policylens.config.views import healthcheck
 
+handler403 = "policylens.apps.accounts.views.forbidden_view"
+
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", include("policylens.apps.public.urls")),
+    path("", include("policylens.apps.accounts.urls")),
     path("api/health/", healthcheck, name="healthcheck"),
     path("api/", include("policylens.apps.claims.api.urls")),
     path("ops/", include("policylens.apps.ops.urls")),
