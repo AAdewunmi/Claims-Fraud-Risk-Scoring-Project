@@ -22,15 +22,22 @@ SURFACE_INTENT_SESSION_KEY = "policylens_surface_intent"
 @dataclass(frozen=True)
 class SurfaceSpec:
     """Configuration for a product surface."""
+
     surface: str
     title: str
     console_url_name: str
 
 
 SURFACES: dict[str, SurfaceSpec] = {
-    "admin": SurfaceSpec(surface="admin", title="Admin login", console_url_name="accounts:console_admin"),
-    "reviewer": SurfaceSpec(surface="reviewer", title="Reviewer login", console_url_name="accounts:console_reviewer"),
-    "customer": SurfaceSpec(surface="customer", title="Customer login", console_url_name="accounts:console_customer"),
+    "admin": SurfaceSpec(
+        surface="admin", title="Admin login", console_url_name="accounts:console_admin"
+    ),
+    "reviewer": SurfaceSpec(
+        surface="reviewer", title="Reviewer login", console_url_name="accounts:console_reviewer"
+    ),
+    "customer": SurfaceSpec(
+        surface="customer", title="Customer login", console_url_name="accounts:console_customer"
+    ),
 }
 
 
@@ -41,6 +48,7 @@ class SurfaceLoginView(FormView):
     The key behaviour is that the surface intent is captured and preserved in
     the session so later routing and gating can respond deterministically.
     """
+
     template_name = "accounts/login_surface.html"
     form_class = AuthenticationForm
 
@@ -56,7 +64,9 @@ class SurfaceLoginView(FormView):
         """
         surface = initkwargs.get("surface")
         if surface not in SURFACES:
-            raise ValueError(f"Unknown surface '{surface}'. Expected one of: {', '.join(SURFACES.keys())}")
+            raise ValueError(
+                f"Unknown surface '{surface}'. Expected one of: {', '.join(SURFACES.keys())}"
+            )
         return super().as_view(**initkwargs)
 
     def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -123,7 +133,9 @@ class ConsolePlaceholderView(View):
     def as_view(cls, **initkwargs):
         surface = initkwargs.get("surface")
         if surface not in SURFACES:
-            raise ValueError(f"Unknown surface '{surface}'. Expected one of: {', '.join(SURFACES.keys())}")
+            raise ValueError(
+                f"Unknown surface '{surface}'. Expected one of: {', '.join(SURFACES.keys())}"
+            )
         return super().as_view(**initkwargs)
 
     def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:

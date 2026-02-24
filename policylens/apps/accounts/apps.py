@@ -11,6 +11,7 @@ from django.apps import AppConfig
 
 class AccountsConfig(AppConfig):
     """Django AppConfig for accounts and auth surfaces."""
+
     default_auto_field = "django.db.models.BigAutoField"
     name = "policylens.apps.accounts"
     verbose_name = "Accounts"
