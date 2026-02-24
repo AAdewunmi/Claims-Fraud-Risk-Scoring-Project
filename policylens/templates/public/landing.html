@@ -1,0 +1,26 @@
+{% extends "site/base.html" %}
+
+{% block title %}Landing | PolicyLens{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1>PolicyLens</h1>
+    <p class="lead">
+      Choose a surface. Each surface shares the same authentication, but routes to a different console.
+    </p>
+
+    <div class="button-row">
+      <a class="button" href="/login/admin/">Admin</a>
+      <a class="button" href="/login/reviewer/">Reviewer</a>
+      <a class="button" href="/login/customer/">Customer</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>What this sprint changes</h2>
+    <p>
+      Identity and product entry points stop being an implementation detail. The first click now lands on a real page,
+      not an admin login redirect.
+    </p>
+  </section>
+{% endblock %}
