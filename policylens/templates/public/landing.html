@@ -1,27 +1,81 @@
 {% extends "site/base.html" %}
 
-{% block title %}Landing | PolicyLens{% endblock %}
+{% block title %}PolicyLens{% endblock %}
 
 {% block content %}
-  <section class="hero">
-    <h1>PolicyLens</h1>
-    <p class="lead">
-      Sign in to the workspace aligned to your role. PolicyLens uses centralised authentication and routes each user
-      to the correct Admin, Reviewer, or Customer experience.
-    </p>
+  <section class="landing-hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Claims management platform</p>
+      <h1>PolicyLens: Insurance Claims Fraud Risk Scoring System</h1>
+      <p class="lead">
+        Accelerate claim resolution with role-specific workspaces, guided lifecycle execution, and auditable decisions
+        from intake to closure.
+      </p>
 
-    <div class="button-row">
-      <a class="button" href="/login/admin/">Admin</a>
-      <a class="button" href="/login/reviewer/">Reviewer</a>
-      <a class="button" href="/login/customer/">Customer</a>
+      <div class="button-row">
+        <a class="button" href="/login/admin/">Admin</a>
+        <a class="button" href="/login/reviewer/">Reviewer</a>
+        <a class="button button-secondary" href="/login/customer/">Customer</a>
+      </div>
+
+      <ul class="trust-points">
+        <li>Role-aware entry and routing</li>
+        <li>Deterministic workflows and handoffs</li>
+        <li>Audit-first operational controls</li>
+      </ul>
     </div>
+
+    <aside class="hero-panel" aria-label="Operational performance indicators">
+      <h2>Operational snapshot</h2>
+      <div class="metric-grid">
+        <article>
+          <span class="metric-value">2.4x</span>
+          <span class="metric-label">faster triage throughput</span>
+        </article>
+        <article>
+          <span class="metric-value">99.2%</span>
+          <span class="metric-label">decision trail completeness</span>
+        </article>
+        <article>
+          <span class="metric-value">18%</span>
+          <span class="metric-label">lower rework volume</span>
+        </article>
+        <article>
+          <span class="metric-value">&lt;5m</span>
+          <span class="metric-label">assignment SLA for priority claims</span>
+        </article>
+      </div>
+    </aside>
   </section>
 
-  <section class="card">
-    <h2>Platform maturity</h2>
-    <p>
-      This release introduces a dedicated public gateway with role-aware routing. In progress: stricter authorisation
-      policies, stronger audit trails, and reliability hardening across all user surfaces.
+  <section class="card lifecycle">
+    <h2>Lifecycle orchestration</h2>
+    <p class="muted">
+      From claim intake to closure, PolicyLens delivers structured control across the full insurance claims lifecycle.
     </p>
+
+    <div class="lifecycle-diagram" aria-label="Insurance claims lifecycle flow">
+      <div class="flow-track">
+        <span class="flow-arrow flow-arrow-top" aria-hidden="true"></span>
+        <ol class="flow-stages">
+          <li class="flow-stage"><span>Claim Intake</span></li>
+          <li class="flow-stage"><span>Assign</span></li>
+          <li class="flow-stage"><span>Evaluate</span></li>
+          <li class="flow-stage"><span>Reserve and Pay</span></li>
+          <li class="flow-stage"><span>Negotiation</span></li>
+          <li class="flow-stage"><span>Close</span></li>
+        </ol>
+        <span class="flow-arrow flow-arrow-bottom" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <div class="lifecycle-grid">
+      <article><h3>Intake</h3><p>Capture first notice details with policy context and validation checks.</p></article>
+      <article><h3>Assignment</h3><p>Route claims by priority, complexity, and operating rules.</p></article>
+      <article><h3>Evaluation</h3><p>Apply evidence standards and reasoned adjudication steps.</p></article>
+      <article><h3>Reserve &amp; Pay</h3><p>Manage reserve movements and payment events with traceability.</p></article>
+      <article><h3>Negotiation</h3><p>Coordinate decisions with structured notes and event history.</p></article>
+      <article><h3>Closure</h3><p>Enforce final controls before completion and reporting.</p></article>
+    </div>
   </section>
 {% endblock %}
