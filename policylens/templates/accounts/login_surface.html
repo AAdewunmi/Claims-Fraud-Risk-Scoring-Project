@@ -1,0 +1,44 @@
+{% extends "site/base.html" %}
+
+{% block title %}{{ surface_title }} | PolicyLens{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1>{{ surface_title }}</h1>
+    <p class="muted">
+      You are signing in through a shared authentication service with surface-aware routing. Current sprint work is
+      focused on tightening authorisation boundaries and expanding audit visibility per surface.
+    </p>
+
+    <form method="post" class="form">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div class="field">
+        <label for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+          <div class="field-error">{{ form.username.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div class="field">
+        <label for="{{ form.password.id_for_label }}">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}
+          <div class="field-error">{{ form.password.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div class="button-row">
+        <button class="button" type="submit">Sign in</button>
+        <a class="button button-secondary" href="/">Back</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

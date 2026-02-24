@@ -30,10 +30,6 @@ def test_landing_role_links_exist(client, role_label):
     _extract_role_href(html, role_label)
 
 
-@pytest.mark.xfail(
-    reason="accounts routes not implemented yet; remove xfail when login surfaces are wired",
-    strict=True,
-)
 @pytest.mark.parametrize("role_label", ["Admin", "Reviewer", "Customer"])
 def test_landing_role_links_resolve(client, role_label):
     response = client.get(reverse("public:landing"))
