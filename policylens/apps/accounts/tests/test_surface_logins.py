@@ -1,17 +1,21 @@
 """
-DB-hitting tests for surface-specific login entry points.
+DB-hitting tests for surface-specific login entry points and first boundary guard.
 
-The goal is to prove:
+Proof targets:
 - each login page renders
 - posting valid credentials logs in
 - redirect is deterministic per surface
-- failed credentials keep user unauthenticated
+- reviewer console enforces boundary rules:
+  - anonymous -> redirect to /login/reviewer/ with next
+  - authenticated wrong role -> 403
+  - reviewer/admin group -> 200
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from django.contrib.auth import SESSION_KEY, get_user_model
+from django.contrib.auth.models import Group
 from django.test import RequestFactory
 from django.urls import reverse
 
@@ -19,7 +23,6 @@ from policylens.apps.accounts.views import (
     SURFACE_INTENT_SESSION_KEY,
     ConsolePlaceholderView,
     SurfaceLoginView,
-    forbidden_view,
 )
 
 pytestmark = pytest.mark.django_db
@@ -31,21 +34,46 @@ def user_password():
 
 
 @pytest.fixture()
+def reviewer_group():
+    return Group.objects.create(name="reviewer")
+
+
+@pytest.fixture()
+def admin_group():
+    return Group.objects.create(name="admin")
+
+
+@pytest.fixture()
 def basic_user(user_password):
     User = get_user_model()
     return User.objects.create_user(username="alex", password=user_password)
 
 
+@pytest.fixture()
+def reviewer_user(user_password, reviewer_group):
+    User = get_user_model()
+    user = User.objects.create_user(username="riley", password=user_password)
+    user.groups.add(reviewer_group)
+    return user
+
+
+@pytest.fixture()
+def admin_user(user_password, admin_group):
+    User = get_user_model()
+    user = User.objects.create_user(username="sam", password=user_password)
+    user.groups.add(admin_group)
+    return user
+
+
 @pytest.mark.parametrize(
-    "surface, login_url_name, console_url_name",
+    "surface, login_url_name",
     [
-        ("admin", "accounts:login_admin", "accounts:console_admin"),
-        ("reviewer", "accounts:login_reviewer", "accounts:console_reviewer"),
-        ("customer", "accounts:login_customer", "accounts:console_customer"),
+        ("admin", "accounts:login_admin"),
+        ("reviewer", "accounts:login_reviewer"),
+        ("customer", "accounts:login_customer"),
     ],
 )
-def test_surface_login_get_renders(client, surface, login_url_name, console_url_name):
-    del console_url_name
+def test_surface_login_get_renders(client, surface, login_url_name):
     response = client.get(reverse(login_url_name))
     assert response.status_code == 200
     assert b"Sign in" in response.content
@@ -58,11 +86,10 @@ def test_surface_login_get_renders(client, surface, login_url_name, console_url_
     "surface, login_url_name, console_url_name",
     [
         ("admin", "accounts:login_admin", "accounts:console_admin"),
-        ("reviewer", "accounts:login_reviewer", "accounts:console_reviewer"),
         ("customer", "accounts:login_customer", "accounts:console_customer"),
     ],
 )
-def test_surface_login_post_redirects_to_console(
+def test_surface_login_post_redirects_to_console_non_guarded_surfaces(
     client, basic_user, user_password, surface, login_url_name, console_url_name
 ):
     response = client.post(
@@ -79,6 +106,66 @@ def test_surface_login_post_redirects_to_console(
     follow_response = client.get(reverse(console_url_name))
     assert follow_response.status_code == 200
     assert b"placeholder" in follow_response.content.lower()
+
+
+def test_reviewer_console_anonymous_redirects_to_reviewer_login_with_next(client):
+    console_url = reverse("accounts:console_reviewer")
+    login_url = reverse("accounts:login_reviewer")
+    response = client.get(console_url, follow=False)
+    assert response.status_code == 302
+    assert response["Location"] == f"{login_url}?next={console_url}"
+
+
+def test_reviewer_console_authenticated_wrong_role_gets_403(client, basic_user, user_password):
+    login_response = client.post(
+        reverse("accounts:login_customer"),
+        data={"username": basic_user.username, "password": user_password},
+        follow=False,
+    )
+    assert login_response.status_code == 302
+
+    response = client.get(reverse("accounts:console_reviewer"))
+    assert response.status_code == 403
+    assert b"Forbidden" in response.content
+
+
+@pytest.mark.parametrize("include_query_next", [False, True])
+def test_reviewer_console_allows_reviewer_group(
+    client, reviewer_user, user_password, include_query_next
+):
+    console_url = reverse("accounts:console_reviewer")
+    login_url = reverse("accounts:login_reviewer")
+    if include_query_next:
+        login_url = f"{login_url}?next={console_url}"
+
+    response = client.post(
+        login_url,
+        data={"username": reviewer_user.username, "password": user_password, "next": console_url},
+        follow=False,
+    )
+    assert response.status_code == 302
+    assert response["Location"] == console_url
+    assert client.session[SURFACE_INTENT_SESSION_KEY] == "reviewer"
+
+    console_response = client.get(console_url)
+    assert console_response.status_code == 200
+    assert b"reviewer console" in console_response.content.lower()
+
+
+def test_reviewer_console_allows_admin_group(client, admin_user, user_password):
+    console_url = reverse("accounts:console_reviewer")
+    login_url = f"{reverse('accounts:login_reviewer')}?next={console_url}"
+    response = client.post(
+        login_url,
+        data={"username": admin_user.username, "password": user_password, "next": console_url},
+        follow=False,
+    )
+    assert response.status_code == 302
+    assert response["Location"] == console_url
+
+    console_response = client.get(console_url)
+    assert console_response.status_code == 200
+    assert b"reviewer console" in console_response.content.lower()
 
 
 @pytest.mark.parametrize(
@@ -125,14 +212,3 @@ def test_surface_login_form_valid_returns_bad_request_when_user_is_missing():
 
     assert response.status_code == 400
     assert response.content == b"Login failed."
-
-
-def test_forbidden_view_renders_shared_template_with_403_status():
-    request = RequestFactory().get(reverse("accounts:forbidden"))
-    fake_response = Mock(status_code=403)
-
-    with patch("policylens.apps.accounts.views.render", return_value=fake_response) as mock_render:
-        response = forbidden_view(request, exception=Exception("forbidden"))
-
-    assert response is fake_response
-    mock_render.assert_called_once_with(request, "site/forbidden.html", status=403)
