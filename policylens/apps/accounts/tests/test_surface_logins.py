@@ -8,11 +8,19 @@ The goal is to prove:
 - failed credentials keep user unauthenticated
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
 from django.contrib.auth import SESSION_KEY, get_user_model
+from django.test import RequestFactory
 from django.urls import reverse
 
-from policylens.apps.accounts.views import SURFACE_INTENT_SESSION_KEY
+from policylens.apps.accounts.views import (
+    SURFACE_INTENT_SESSION_KEY,
+    ConsolePlaceholderView,
+    SurfaceLoginView,
+    forbidden_view,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -94,3 +102,37 @@ def test_surface_login_post_invalid_credentials_shows_form_error(
     assert response.context["form"].non_field_errors()
     assert SESSION_KEY not in client.session
     assert client.session[SURFACE_INTENT_SESSION_KEY] == surface
+
+
+def test_surface_login_as_view_rejects_unknown_surface():
+    with pytest.raises(ValueError, match="Unknown surface 'unknown'"):
+        SurfaceLoginView.as_view(surface="unknown")
+
+
+def test_console_placeholder_as_view_rejects_unknown_surface():
+    with pytest.raises(ValueError, match="Unknown surface 'unknown'"):
+        ConsolePlaceholderView.as_view(surface="unknown")
+
+
+def test_surface_login_form_valid_returns_bad_request_when_user_is_missing():
+    view = SurfaceLoginView()
+    view.surface = "admin"
+    view.request = RequestFactory().post(reverse("accounts:login_admin"))
+    form = Mock()
+    form.get_user.return_value = None
+
+    response = view.form_valid(form)
+
+    assert response.status_code == 400
+    assert response.content == b"Login failed."
+
+
+def test_forbidden_view_renders_shared_template_with_403_status():
+    request = RequestFactory().get(reverse("accounts:forbidden"))
+    fake_response = Mock(status_code=403)
+
+    with patch("policylens.apps.accounts.views.render", return_value=fake_response) as mock_render:
+        response = forbidden_view(request, exception=Exception("forbidden"))
+
+    assert response is fake_response
+    mock_render.assert_called_once_with(request, "site/forbidden.html", status=403)
