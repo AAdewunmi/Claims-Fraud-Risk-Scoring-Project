@@ -11,4 +11,5 @@ class LandingPageView(TemplateView):
 
     Provides entry points to the three surface-specific login pages.
     """
+
     template_name = "public/landing.html"

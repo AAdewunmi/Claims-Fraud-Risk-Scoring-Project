@@ -10,6 +10,7 @@ from django.apps import AppConfig
 
 class PublicConfig(AppConfig):
     """Django AppConfig for the public site surfaces."""
+
     default_auto_field = "django.db.models.BigAutoField"
     name = "policylens.apps.public"
     verbose_name = "Public"
