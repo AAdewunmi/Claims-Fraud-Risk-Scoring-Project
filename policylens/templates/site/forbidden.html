@@ -1,0 +1,15 @@
+{% extends "site/base.html" %}
+
+{% block title %}Forbidden | PolicyLens{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1>Forbidden</h1>
+    <p>You are signed in, but this surface is not available for your role.</p>
+    <p>
+      <a class="button" href="/">Back to landing</a>
+      <a class="button button-secondary" href="/login/reviewer/">Go to reviewer login</a>
+      <a class="button button-secondary" href="/login/customer/">Go to customer login</a>
+    </p>
+  </section>
+{% endblock %}
