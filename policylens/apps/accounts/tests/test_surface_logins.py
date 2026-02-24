@@ -15,7 +15,7 @@ from unittest.mock import Mock
 
 import pytest
 from django.contrib.auth import SESSION_KEY, get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import AnonymousUser, Group
 from django.test import RequestFactory
 from django.urls import reverse
 
@@ -23,6 +23,7 @@ from policylens.apps.accounts.views import (
     SURFACE_INTENT_SESSION_KEY,
     ConsolePlaceholderView,
     SurfaceLoginView,
+    user_has_reviewer_surface_access,
 )
 
 pytestmark = pytest.mark.django_db
@@ -116,6 +117,14 @@ def test_reviewer_console_anonymous_redirects_to_reviewer_login_with_next(client
     assert response["Location"] == f"{login_url}?next={console_url}"
 
 
+def test_surface_login_get_with_safe_next_sets_context_and_hidden_input(client):
+    console_url = reverse("accounts:console_reviewer")
+    response = client.get(f"{reverse('accounts:login_reviewer')}?next={console_url}")
+    assert response.status_code == 200
+    assert response.context["next"] == console_url
+    assert f'name="next" value="{console_url}"'.encode() in response.content
+
+
 def test_reviewer_console_authenticated_wrong_role_gets_403(client, basic_user, user_password):
     login_response = client.post(
         reverse("accounts:login_customer"),
@@ -166,6 +175,20 @@ def test_reviewer_console_allows_admin_group(client, admin_user, user_password):
     console_response = client.get(console_url)
     assert console_response.status_code == 200
     assert b"reviewer console" in console_response.content.lower()
+
+
+def test_user_has_reviewer_surface_access_denies_anonymous():
+    assert user_has_reviewer_surface_access(AnonymousUser()) is False
+
+
+def test_user_has_reviewer_surface_access_allows_superuser(user_password):
+    User = get_user_model()
+    superuser = User.objects.create_superuser(
+        username="root",
+        email="root@example.com",
+        password=user_password,
+    )
+    assert user_has_reviewer_surface_access(superuser) is True
 
 
 @pytest.mark.parametrize(
