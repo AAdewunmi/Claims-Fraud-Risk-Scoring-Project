@@ -4,7 +4,7 @@ SLA rules and utilities for PolicyLens.
 
 SLA clocks are operational evidence. Rules must be deterministic and testable.
 
-Week 3 scope:
+Sprint 3 scope:
 - Compute due_at based on claim priority.
 - Create SLA clocks when missing.
 - Detect breaches.

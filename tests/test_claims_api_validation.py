@@ -2,7 +2,7 @@
 """
 Validation and negative behaviour tests for PolicyLens API.
 
-Week 2 validates:
+Sprint 2 validates:
 - Document upload constraints
 - Workflow rule failures return stable errors
 """

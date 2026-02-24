@@ -2,7 +2,7 @@
 """
 Core models.
 
-Week 3 adds an idempotency record model to support safe retries for write endpoints.
+Sprint 3 adds an idempotency record model to support safe retries for write endpoints.
 """
 
 from __future__ import annotations

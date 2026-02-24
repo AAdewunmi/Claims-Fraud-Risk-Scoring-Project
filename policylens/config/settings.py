@@ -2,7 +2,7 @@
 """
 Django settings for PolicyLens.
 
-Week 5 adds ops app and static files wiring.
+Sprint 5 adds ops app and static files wiring.
 """
 
 from __future__ import annotations
@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     "policylens.apps.core",
     "policylens.apps.claims",
     "policylens.apps.ops",
+    "policylens.apps.public",
+    "policylens.apps.accounts",
 ]
 
 MIDDLEWARE = [
@@ -59,7 +61,7 @@ ROOT_URLCONF = "policylens.config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "policylens" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -93,7 +95,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR / "apps" / "ops" / "static"]
+STATICFILES_DIRS = [
+    BASE_DIR / "policylens" / "static",
+    BASE_DIR / "apps" / "ops" / "static",
+]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MEDIA_URL = "/media/"

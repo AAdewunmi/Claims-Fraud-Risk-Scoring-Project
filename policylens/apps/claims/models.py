@@ -2,7 +2,7 @@
 """
 Claims domain models.
 
-Week 4 extends MlScore with model metadata for auditability.
+Sprint 4 extends MlScore with model metadata for auditability.
 """
 
 from __future__ import annotations
@@ -200,7 +200,7 @@ class MlScore(models.Model):
     label = models.CharField(max_length=32, blank=True)
     reason_codes = models.JSONField(default=list)
 
-    # Week 4 metadata for traceability.
+    # Sprint 4 metadata for traceability.
     model_version = models.CharField(max_length=64, blank=True)
     threshold = models.FloatField(default=0.0)
     feature_contract_hash = models.CharField(max_length=64, blank=True)

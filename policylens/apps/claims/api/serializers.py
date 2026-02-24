@@ -2,7 +2,7 @@
 """
 Serializers define the canonical API contract.
 
-Week 4 surfaces ml_score fields in claim detail.
+Sprint 4 surfaces ml_score fields in claim detail.
 """
 
 from __future__ import annotations

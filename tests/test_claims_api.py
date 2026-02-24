@@ -2,7 +2,7 @@
 """
 Integration tests for the canonical claim API contract.
 
-Week 2 adds end-to-end workflow tests across nested endpoints.
+Sprint 2 adds end-to-end workflow tests across nested endpoints.
 """
 
 from __future__ import annotations

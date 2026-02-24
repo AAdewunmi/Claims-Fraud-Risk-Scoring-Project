@@ -6,7 +6,7 @@ Export must be deterministic:
 - Chronological ordering for timeline-like sections
 - No file contents, only metadata and URLs
 
-Week 4 adds ml_score to the export bundle when available.
+Sprint 4 adds ml_score to the export bundle when available.
 """
 
 from __future__ import annotations

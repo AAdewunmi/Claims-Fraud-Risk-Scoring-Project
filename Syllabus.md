@@ -12,7 +12,7 @@ The project stance is API-first for core workflow, server-rendered UI for ops. D
 
 ## Weekly Structure
 
-| Week | Theme | Core Skills | Key Deliverables |
+| Sprint | Theme | Core Skills | Key Deliverables |
 |---|---|---|---|
 | 1 | Foundations and API contract begins | Repo bootstrap • Docker Compose + Postgres • Baseline domain models • DRF contract-first approach • pytest + factory_boy • CI pipeline | docker-compose.yml, core models, /api/claims list-create, test harness, GitHub Actions, seed path |
 | 2 | Core workflow API-first | Claim lifecycle • Document upload • Notes • Decisions • Audit events • Permissions and roles • End-to-end API integration tests | /api/claims/{id}/documents, /decisions, /notes, append-only AuditEvent table, API permission gates, flow tests |
@@ -47,12 +47,12 @@ By completing PolicyLens, you will be able to:
 
 Weekly short reflections to consolidate engineering and communication skills:
 
-- Week 1: Contracts and reproducibility, why determinism matters early
-- Week 2: Workflow correctness, making lifecycle operations testable and auditable
-- Week 3: Operational readiness, SLA rules, prioritisation, and evidence exports
-- Week 4: ML integration without hype, reason codes, contracts, and governance
-- Week 5: UX for ops teams, timelines, empty states, and HTMX as a testable pattern
-- Week 6: Production credibility, health checks, CI gates, and deploy documentation
+- Sprint 1: Contracts and reproducibility, why determinism matters early
+- Sprint 2: Workflow correctness, making lifecycle operations testable and auditable
+- Sprint 3: Operational readiness, SLA rules, prioritisation, and evidence exports
+- Sprint 4: ML integration without hype, reason codes, contracts, and governance
+- Sprint 5: UX for ops teams, timelines, empty states, and HTMX as a testable pattern
+- Sprint 6: Production credibility, health checks, CI gates, and deploy documentation
 
 ## Tools and Stack
 
