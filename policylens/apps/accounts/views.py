@@ -158,11 +158,12 @@ class ConsolePlaceholderView(View):
 
 
 @require_http_methods(["GET"])
-def forbidden_view(request: HttpRequest) -> HttpResponse:
+def forbidden_view(request: HttpRequest, exception: Exception | None = None) -> HttpResponse:
     """
     Shared forbidden page.
 
     This is used directly at /forbidden/ and can also be wired as handler403 so
     wrong-role access renders a consistent template.
     """
+    del exception
     return render(request, "site/forbidden.html", status=403)
