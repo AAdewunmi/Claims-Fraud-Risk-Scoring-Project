@@ -19,14 +19,11 @@ handler403 = "policylens.apps.accounts.views.forbidden_view"
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-
     # Public and accounts surfaces
     path("", include("policylens.apps.public.urls")),
     path("", include("policylens.apps.accounts.urls")),
-
     # Role consoles
     path("", include("policylens.apps.console.urls")),
-
     # API and operational surfaces
     path("api/health/", healthcheck, name="healthcheck"),
     path("api/", include("policylens.apps.claims.api.urls")),
