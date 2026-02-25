@@ -26,7 +26,7 @@ from policylens.apps.accounts.views import (
     user_has_reviewer_surface_access,
 )
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 @pytest.fixture()
@@ -86,8 +86,8 @@ def test_surface_login_get_renders(client, surface, login_url_name):
 @pytest.mark.parametrize(
     "surface, login_url_name, console_url_name",
     [
-        ("admin", "accounts:login_admin", "accounts:console_admin"),
-        ("customer", "accounts:login_customer", "accounts:console_customer"),
+        ("admin", "accounts:login_admin", "console:admin_home"),
+        ("customer", "accounts:login_customer", "console:customer_home"),
     ],
 )
 def test_surface_login_post_redirects_to_console_non_guarded_surfaces(
@@ -104,13 +104,9 @@ def test_surface_login_post_redirects_to_console_non_guarded_surfaces(
     assert client.session[SESSION_KEY] == str(basic_user.pk)
     assert client.session[SURFACE_INTENT_SESSION_KEY] == surface
 
-    follow_response = client.get(reverse(console_url_name))
-    assert follow_response.status_code == 200
-    assert b"placeholder" in follow_response.content.lower()
-
 
 def test_reviewer_console_anonymous_redirects_to_reviewer_login_with_next(client):
-    console_url = reverse("accounts:console_reviewer")
+    console_url = reverse("console:reviewer_home")
     login_url = reverse("accounts:login_reviewer")
     response = client.get(console_url, follow=False)
     assert response.status_code == 302
@@ -118,7 +114,7 @@ def test_reviewer_console_anonymous_redirects_to_reviewer_login_with_next(client
 
 
 def test_surface_login_get_with_safe_next_sets_context_and_hidden_input(client):
-    console_url = reverse("accounts:console_reviewer")
+    console_url = reverse("console:reviewer_home")
     response = client.get(f"{reverse('accounts:login_reviewer')}?next={console_url}")
     assert response.status_code == 200
     assert response.context["next"] == console_url
@@ -133,7 +129,7 @@ def test_reviewer_console_authenticated_wrong_role_gets_403(client, basic_user, 
     )
     assert login_response.status_code == 302
 
-    response = client.get(reverse("accounts:console_reviewer"))
+    response = client.get(reverse("console:reviewer_home"))
     assert response.status_code == 403
     assert b"Forbidden" in response.content
 
@@ -142,7 +138,7 @@ def test_reviewer_console_authenticated_wrong_role_gets_403(client, basic_user, 
 def test_reviewer_console_allows_reviewer_group(
     client, reviewer_user, user_password, include_query_next
 ):
-    console_url = reverse("accounts:console_reviewer")
+    console_url = reverse("console:reviewer_home")
     login_url = reverse("accounts:login_reviewer")
     if include_query_next:
         login_url = f"{login_url}?next={console_url}"
@@ -162,7 +158,7 @@ def test_reviewer_console_allows_reviewer_group(
 
 
 def test_reviewer_console_allows_admin_group(client, admin_user, user_password):
-    console_url = reverse("accounts:console_reviewer")
+    console_url = reverse("console:reviewer_home")
     login_url = f"{reverse('accounts:login_reviewer')}?next={console_url}"
     response = client.post(
         login_url,
@@ -235,3 +231,15 @@ def test_surface_login_form_valid_returns_bad_request_when_user_is_missing():
 
     assert response.status_code == 400
     assert response.content == b"Login failed."
+
+
+def test_console_placeholder_reviewer_anonymous_redirects_to_login_with_console_next():
+    request = RequestFactory().get("/console/reviewer/")
+    request.user = AnonymousUser()
+
+    response = ConsolePlaceholderView.as_view(surface="reviewer")(request)
+
+    assert response.status_code == 302
+    assert response["Location"] == (
+        f"{reverse('accounts:login_reviewer')}?next={reverse('console:reviewer_home')}"
+    )

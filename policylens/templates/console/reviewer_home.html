@@ -1,0 +1,26 @@
+{% extends "site/base.html" %}
+
+{% block title %}Reviewer console | PolicyLens{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1>Reviewer console</h1>
+    <p class="muted">
+      This is the operational foothold for claim reviewers. A production-grade review workspace is in active build,
+      with secure role routing and a stable entry path already established.
+    </p>
+
+    <div class="button-row">
+      <a class="button button-secondary" href="/">Back to landing</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Build status</h2>
+    <p>
+      Current delivery validates production-ready access behavior: anonymous users are redirected to reviewer sign-in,
+      authenticated non-reviewer access is denied with a shared 403 surface, and this console is prepared for queue,
+      triage, and adjudication workflows.
+    </p>
+  </section>
+{% endblock %}
