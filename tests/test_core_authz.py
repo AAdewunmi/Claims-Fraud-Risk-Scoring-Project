@@ -6,7 +6,12 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group
 
-from policylens.apps.core.authz import user_is_admin, user_is_customer, user_is_reviewer
+from policylens.apps.core.authz import (
+    user_in_any_group,
+    user_is_admin,
+    user_is_customer,
+    user_is_reviewer,
+)
 
 
 @pytest.mark.django_db
@@ -15,6 +20,10 @@ def test_role_helpers_deny_anonymous():
     assert user_is_admin(anonymous) is False
     assert user_is_reviewer(anonymous) is False
     assert user_is_customer(anonymous) is False
+
+
+def test_user_in_any_group_denies_unauthenticated_user():
+    assert user_in_any_group(AnonymousUser(), ["admin"]) is False
 
 
 @pytest.mark.django_db
