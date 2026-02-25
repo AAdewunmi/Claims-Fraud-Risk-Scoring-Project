@@ -11,7 +11,7 @@ future API endpoints.
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 GROUP_ADMIN = "admin"
 GROUP_REVIEWER = "reviewer"
