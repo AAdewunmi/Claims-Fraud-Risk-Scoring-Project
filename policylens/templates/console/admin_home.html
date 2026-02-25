@@ -1,0 +1,28 @@
+{% extends "site/base.html" %}
+
+{% block title %}Admin console | PolicyLens{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1>Admin console</h1>
+    <p class="muted">
+      This is the operational foothold for PolicyLens administrators. A production-grade admin workspace is in active
+      build, with role-safe access and core navigation already in place.
+    </p>
+
+    <div class="button-row">
+      <a class="button" href="{{ django_admin_url }}">Open Django admin</a>
+      <a class="button button-secondary" href="{{ reviewer_console_url }}">Reviewer console</a>
+      <a class="button button-secondary" href="{{ customer_console_url }}">Customer console</a>
+      <a class="button button-secondary" href="/">Back to landing</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Next surfaces</h2>
+    <p>
+      Current delivery is focused on moving critical operations out of Django admin into hardened product-native
+      controls for configuration, user lifecycle management, audit visibility, and system governance.
+    </p>
+  </section>
+{% endblock %}
