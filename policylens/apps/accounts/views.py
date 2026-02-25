@@ -34,13 +34,13 @@ class SurfaceSpec:
 
 SURFACES: dict[str, SurfaceSpec] = {
     "admin": SurfaceSpec(
-        surface="admin", title="Admin login", console_url_name="accounts:console_admin"
+        surface="admin", title="Admin login", console_url_name="console:admin_home"
     ),
     "reviewer": SurfaceSpec(
-        surface="reviewer", title="Reviewer login", console_url_name="accounts:console_reviewer"
+        surface="reviewer", title="Reviewer login", console_url_name="console:reviewer_home"
     ),
     "customer": SurfaceSpec(
-        surface="customer", title="Customer login", console_url_name="accounts:console_customer"
+        surface="customer", title="Customer login", console_url_name="console:customer_home"
     ),
 }
 
@@ -189,7 +189,7 @@ class ConsolePlaceholderView(View):
         if spec.surface == "reviewer":
             if not request.user.is_authenticated:
                 login_url = reverse("accounts:login_reviewer")
-                return redirect(f"{login_url}?next={reverse('accounts:console_reviewer')}")
+                return redirect(f"{login_url}?next={reverse('console:reviewer_home')}")
 
             if not user_has_reviewer_surface_access(request.user):
                 return render(request, "site/forbidden.html", status=403)
