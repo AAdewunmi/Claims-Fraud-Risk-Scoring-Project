@@ -11,7 +11,6 @@ Proof targets:
   - reviewer/admin group -> 200
 """
 
-from importlib.util import find_spec
 from unittest.mock import Mock
 
 import pytest
@@ -28,14 +27,6 @@ from policylens.apps.accounts.views import (
 )
 
 pytestmark = [pytest.mark.django_db]
-if find_spec("policylens.apps.core.authz") is None:
-    pytestmark.append(
-        pytest.mark.xfail(
-            reason="Temporary: console authz helpers are implemented in the next issue.",
-            raises=ModuleNotFoundError,
-            strict=False,
-        )
-    )
 
 
 @pytest.fixture()
@@ -240,3 +231,15 @@ def test_surface_login_form_valid_returns_bad_request_when_user_is_missing():
 
     assert response.status_code == 400
     assert response.content == b"Login failed."
+
+
+def test_console_placeholder_reviewer_anonymous_redirects_to_login_with_console_next():
+    request = RequestFactory().get("/console/reviewer/")
+    request.user = AnonymousUser()
+
+    response = ConsolePlaceholderView.as_view(surface="reviewer")(request)
+
+    assert response.status_code == 302
+    assert response["Location"] == (
+        f"{reverse('accounts:login_reviewer')}?next={reverse('console:reviewer_home')}"
+    )
