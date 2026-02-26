@@ -15,10 +15,17 @@ def test_paginate_invalid_page_defaults_to_first_and_keeps_filters():
 
     pagination = paginate_request_queryset(request, list(range(6)), page_size=2)
 
-    assert pagination.page_number == 1
     assert pagination.page_obj.number == 1
-    assert pagination.querystring == "status=NEW"
-    assert pagination.page_query(2) == "?status=NEW&page=2"
+    assert pagination.total_count == 6
+    assert pagination.showing_from == 1
+    assert pagination.showing_to == 2
+    assert pagination.next_url == "/ops/queue/?status=NEW&page=2"
+    assert pagination.last_url == "/ops/queue/?status=NEW&page=3"
+    assert pagination.prev_url == ""
+    assert pagination.first_url == ""
+    assert [link.number for link in pagination.page_links] == [1, 2, 3]
+    assert pagination.page_links[0].is_current is True
+    assert pagination.page_links[1].url == "/ops/queue/?status=NEW&page=2"
 
 
 def test_paginate_negative_page_defaults_to_first_and_out_of_range_uses_last():
@@ -26,14 +33,28 @@ def test_paginate_negative_page_defaults_to_first_and_out_of_range_uses_last():
     request_neg = RequestFactory().get("/ops/queue/", data={"page": "-3"})
     negative = paginate_request_queryset(request_neg, list(range(4)), page_size=2)
 
-    assert negative.page_number == 1
     assert negative.page_obj.number == 1
-    assert negative.querystring == ""
-    assert negative.page_query(2) == "?page=2"
+    assert negative.first_url == ""
+    assert negative.prev_url == ""
+    assert negative.next_url == "/ops/queue/?page=2"
+    assert negative.last_url == "/ops/queue/?page=2"
 
     request_oor = RequestFactory().get("/ops/queue/", data={"priority": "HIGH", "page": "999"})
     out_of_range = paginate_request_queryset(request_oor, list(range(5)), page_size=2)
 
-    assert out_of_range.page_number == 3
     assert out_of_range.page_obj.number == 3
-    assert out_of_range.querystring == "priority=HIGH"
+    assert out_of_range.first_url == "/ops/queue/?priority=HIGH&page=1"
+    assert out_of_range.prev_url == "/ops/queue/?priority=HIGH&page=2"
+    assert out_of_range.next_url == ""
+    assert out_of_range.last_url == ""
+
+
+def test_paginate_empty_queryset_sets_showing_range_to_zero():
+    """Empty result sets should expose a 0-0 showing range."""
+    request = RequestFactory().get("/ops/queue/")
+    pagination = paginate_request_queryset(request, [], page_size=15)
+
+    assert pagination.total_count == 0
+    assert pagination.showing_from == 0
+    assert pagination.showing_to == 0
+    assert pagination.page_obj.number == 1
