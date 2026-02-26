@@ -35,8 +35,8 @@ def test_ops_queue_empty_state(client):
     url = reverse("ops:queue")
     resp = client.get(url)
     assert resp.status_code == 200
-    html = resp.content.decode("utf-8")
-    assert "No claims to review" in html
+    assert resp.context["pagination"].paginator.count == 0
+    assert list(resp.context["items"]) == []
 
 
 @pytest.mark.django_db
@@ -72,6 +72,6 @@ def test_ops_queue_filter_priority(client):
     url = reverse("ops:queue")
     resp = client.get(url, data={"priority": "HIGH"})
     assert resp.status_code == 200
-    html = resp.content.decode("utf-8")
-    assert f"#{c1.id}" in html
-    assert f"#{c2.id}" not in html
+    items = list(resp.context["items"])
+    assert [c.id for c in items] == [c1.id]
+    assert all(c.id != c2.id for c in items)

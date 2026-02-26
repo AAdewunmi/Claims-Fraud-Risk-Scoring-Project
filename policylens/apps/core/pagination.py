@@ -145,8 +145,14 @@ def paginate_request_queryset(
         if paginator.num_pages > 1 and page_obj.number != 1
         else ""
     )
-    prev_url = _build_url(request, page_number=page_obj.previous_page_number()) if page_obj.has_previous() else ""
-    next_url = _build_url(request, page_number=page_obj.next_page_number()) if page_obj.has_next() else ""
+    prev_url = (
+        _build_url(request, page_number=page_obj.previous_page_number())
+        if page_obj.has_previous()
+        else ""
+    )
+    next_url = (
+        _build_url(request, page_number=page_obj.next_page_number()) if page_obj.has_next() else ""
+    )
     last_url = (
         _build_url(request, page_number=paginator.num_pages)
         if paginator.num_pages > 1 and page_obj.number != paginator.num_pages
@@ -155,7 +161,9 @@ def paginate_request_queryset(
 
     window_numbers = _page_window(page_obj.number, paginator.num_pages, radius=window_radius)
     links = [
-        PageLink(number=n, url=_build_url(request, page_number=n), is_current=(n == page_obj.number))
+        PageLink(
+            number=n, url=_build_url(request, page_number=n), is_current=(n == page_obj.number)
+        )
         for n in window_numbers
     ]
 
