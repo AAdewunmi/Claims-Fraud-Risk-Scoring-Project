@@ -1,5 +1,7 @@
 codecov:
-  require_ci_to_pass: true
+  # Prevent status deadlocks where Codecov waits on CI/check contexts
+  # that include Codecov itself.
+  require_ci_to_pass: false
 
 coverage:
   status:
