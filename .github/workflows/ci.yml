@@ -33,6 +33,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Ensure base commit history is available for patch-status comparisons.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -61,9 +64,12 @@ jobs:
           pytest -q --cov=policylens --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-fail-under=80
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
           flags: unittests
+          name: github-actions-unittests
+          disable_search: true
+          verbose: true
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
