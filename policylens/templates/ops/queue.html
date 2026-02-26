@@ -1,0 +1,56 @@
+{% extends "site/base.html" %}
+
+{% block title %}Reviewer queue | PolicyLens{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1>Reviewer queue</h1>
+    <p class="muted">
+      Claims are ordered deterministically and paginated at {{ pagination.paginator.per_page }} per page.
+    </p>
+
+    {# Optional: render filter controls if you already have them.
+       This template preserves whatever querystring params exist. #}
+
+    <div class="card" style="padding: 0;">
+      <div style="padding: 16px 16px 8px;">
+        {% include "site/_pagination.html" with pagination=pagination %}
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 12px 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">Claim</th>
+              <th style="text-align: left; padding: 12px 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">Status</th>
+              <th style="text-align: left; padding: 12px 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if pagination.paginator.count == 0 %}
+              <tr>
+                <td colspan="3" style="padding: 16px; color: var(--muted);">No claims match the current filters.</td>
+              </tr>
+            {% else %}
+              {% for claim in claims %}
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid var(--border);">{{ claim }}</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+                    {% if claim.status %}{{ claim.status }}{% else %}<span class="muted">—</span>{% endif %}
+                  </td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+                    {% if claim.created_at %}{{ claim.created_at }}{% else %}<span class="muted">—</span>{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="padding: 8px 16px 16px;">
+        {% include "site/_pagination.html" with pagination=pagination %}
+      </div>
+    </div>
+  </section>
+{% endblock %}
