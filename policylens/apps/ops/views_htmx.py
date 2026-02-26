@@ -1,4 +1,3 @@
-# path: policylens/apps/ops/views_htmx.py
 """
 HTMX endpoints for ops claim actions.
 
