@@ -1,6 +1,8 @@
-# path: policylens/tests/test_ops_smoke.py
 """
-Ops UI smoke tests.
+Ops smoke tests.
+
+Week 6 update
+Reviewer gating must be enforced.
 """
 
 from __future__ import annotations
@@ -17,18 +19,24 @@ from django.urls import reverse
 from policylens.apps.claims.models import Claim
 from tests.factories import ClaimFactory, PolicyFactory
 
+pytestmark = pytest.mark.django_db
+
 User = get_user_model()
 
 
-def _login_reviewer(client, *, username: str) -> None:
-    """Create and log in a reviewer user for queue access tests."""
-    reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
-    user = User.objects.create_user(username=username, password="password123")
-    user.groups.add(reviewer_group)
-    client.force_login(user)
+@pytest.fixture()
+def normal_user():
+    return User.objects.create_user(username="normal_user", password="pass-12345-strong")
 
 
-@pytest.mark.django_db
+@pytest.fixture()
+def reviewer_user():
+    user = User.objects.create_user(username="reviewer_smoke", password="pass-12345-strong")
+    group, _ = Group.objects.get_or_create(name="reviewer")
+    user.groups.add(group)
+    return user
+
+
 def test_ops_home_redirects_to_queue_for_logged_in_user(client):
     """Ops landing should redirect authenticated users to queue."""
     user = User.objects.create_user(username="ops_home_user", password="password123")
@@ -40,10 +48,16 @@ def test_ops_home_redirects_to_queue_for_logged_in_user(client):
     assert resp.url == reverse("ops:queue")
 
 
-@pytest.mark.django_db
-def test_ops_queue_page_renders_for_logged_in_user(client):
+def test_ops_queue_wrong_role_gets_403(client, normal_user):
+    client.force_login(normal_user)
+    response = client.get("/ops/queue/")
+    assert response.status_code == 403
+    assert b"Forbidden" in response.content
+
+
+def test_ops_queue_reviewer_gets_200(client, reviewer_user):
     """Queue page should be accessible and render expected content."""
-    _login_reviewer(client, username="ops_user")
+    client.force_login(reviewer_user)
 
     url = reverse("ops:queue")
     resp = client.get(url)
@@ -53,10 +67,9 @@ def test_ops_queue_page_renders_for_logged_in_user(client):
     assert "items" in resp.context
 
 
-@pytest.mark.django_db
-def test_ops_queue_applies_filters_and_exposes_pagination_context(client):
+def test_ops_queue_applies_filters_and_exposes_pagination_context(client, reviewer_user):
     """Queue view should filter by supported params and expose pagination context."""
-    _login_reviewer(client, username="ops_filter_user")
+    client.force_login(reviewer_user)
     policy = PolicyFactory()
     c1 = Claim.objects.create(
         policy=policy,
@@ -89,7 +102,6 @@ def test_ops_queue_applies_filters_and_exposes_pagination_context(client):
     assert all(item.id != c2.id for item in items)
 
 
-@pytest.mark.django_db
 def test_ops_claim_detail_page_renders_for_logged_in_user(client):
     """Claim detail page should be accessible and render expected content."""
     user = User.objects.create_user(username="ops_detail_user", password="password123")
