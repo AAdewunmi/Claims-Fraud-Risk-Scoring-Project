@@ -1,6 +1,9 @@
-# path: policylens/tests/test_ops_queue.py
 """
-UI tests for ops queue.
+Ops queue behavioural tests.
+
+Week 6 update
+- Ops queue is reviewer-surface behaviour.
+- Tests must authenticate as a user in the reviewer group (or admin).
 """
 
 from __future__ import annotations
@@ -16,21 +19,30 @@ from django.utils import timezone
 from policylens.apps.claims.models import Claim, SlaClock
 from tests.factories import PolicyFactory
 
+pytestmark = pytest.mark.django_db
+
 User = get_user_model()
 
 
-def _login_reviewer(client, *, username: str) -> None:
-    """Create and log in a reviewer user for queue access tests."""
+@pytest.fixture()
+def reviewer_user():
+    """Create a reviewer-group user for queue access tests."""
     reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
-    user = User.objects.create_user(username=username, password="password123")
+    user = User.objects.create_user(username="reviewer_ops", password="pass-12345-strong")
     user.groups.add(reviewer_group)
-    client.force_login(user)
+    return user
 
 
-@pytest.mark.django_db
-def test_ops_queue_empty_state(client):
+def test_ops_queue_requires_reviewer_role(client, reviewer_user):
+    client.force_login(reviewer_user)
+    response = client.get("/ops/queue/")
+    assert response.status_code == 200
+    assert b"Reviewer queue" in response.content
+
+
+def test_ops_queue_empty_state(client, reviewer_user):
     """Queue should render empty state when no open claims exist."""
-    _login_reviewer(client, username="ops_user2")
+    client.force_login(reviewer_user)
 
     url = reverse("ops:queue")
     resp = client.get(url)
@@ -39,10 +51,9 @@ def test_ops_queue_empty_state(client):
     assert list(resp.context["items"]) == []
 
 
-@pytest.mark.django_db
-def test_ops_queue_filter_priority(client):
+def test_ops_queue_filter_priority(client, reviewer_user):
     """Priority filter should reduce results."""
-    _login_reviewer(client, username="ops_user3")
+    client.force_login(reviewer_user)
 
     policy = PolicyFactory()
     c1 = Claim.objects.create(
