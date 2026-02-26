@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from django.test import RequestFactory
 
-from policylens.apps.core.pagination import paginate_request_queryset
+from policylens.apps.core.pagination import _page_window, paginate_request_queryset
 
 
 def test_paginate_invalid_page_defaults_to_first_and_keeps_filters():
@@ -58,3 +58,8 @@ def test_paginate_empty_queryset_sets_showing_range_to_zero():
     assert pagination.showing_from == 0
     assert pagination.showing_to == 0
     assert pagination.page_obj.number == 1
+
+
+def test_page_window_handles_non_positive_total_pages():
+    """Window helper should still return a safe page list when total_pages <= 0."""
+    assert _page_window(current=1, total_pages=0) == [1]
