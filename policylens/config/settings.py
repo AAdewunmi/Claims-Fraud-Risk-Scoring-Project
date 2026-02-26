@@ -121,6 +121,7 @@ REST_FRAMEWORK = {
 # ML configuration
 ML_ACTIVE_MODEL_VERSION = env("ML_ACTIVE_MODEL_VERSION")
 ML_SCORE_THRESHOLD = float(env("ML_SCORE_THRESHOLD"))
+UI_PAGE_SIZE = 15
 
 _ml_dir = env("ML_ARTIFACT_DIR")
 ML_ARTIFACT_DIR = _ml_dir if _ml_dir else str(BASE_DIR.parent / "artifacts" / "ml")

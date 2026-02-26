@@ -539,3 +539,40 @@ main.container {
     padding: 18px;
   }
 }
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pager-meta {
+  color: var(--muted);
+}
+
+.pager-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pager-link {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--panel);
+}
+
+.pager-link-current {
+  font-weight: 700;
+}
+
+.pager-link-disabled {
+  opacity: 0.5;
+}

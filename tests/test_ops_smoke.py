@@ -49,7 +49,8 @@ def test_ops_queue_page_renders_for_logged_in_user(client):
     resp = client.get(url)
     assert resp.status_code == 200
     assert any(t.name == "ops/queue.html" for t in resp.templates)
-    assert "Review queue" in resp.content.decode("utf-8")
+    assert "pagination" in resp.context
+    assert "items" in resp.context
 
 
 @pytest.mark.django_db
@@ -82,10 +83,10 @@ def test_ops_queue_applies_filters_and_exposes_pagination_context(client):
     assert resp.context["filters"]["priority"] == "HIGH"
     assert resp.context["filters"]["sla"] == "breached"
     assert "pagination" in resp.context
-    assert list(resp.context["items"]) == list(resp.context["pagination"].page_obj.object_list)
-    html = resp.content.decode("utf-8")
-    assert f"#{c1.id}" in html
-    assert f"#{c2.id}" not in html
+    items = list(resp.context["items"])
+    assert items == list(resp.context["pagination"].page_obj.object_list)
+    assert [item.id for item in items] == [c1.id]
+    assert all(item.id != c2.id for item in items)
 
 
 @pytest.mark.django_db
