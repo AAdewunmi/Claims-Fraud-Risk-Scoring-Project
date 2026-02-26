@@ -9,6 +9,7 @@ from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.utils import timezone
 
@@ -18,11 +19,18 @@ from tests.factories import PolicyFactory
 User = get_user_model()
 
 
+def _login_reviewer(client, *, username: str) -> None:
+    """Create and log in a reviewer user for queue access tests."""
+    reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
+    user = User.objects.create_user(username=username, password="password123")
+    user.groups.add(reviewer_group)
+    client.force_login(user)
+
+
 @pytest.mark.django_db
 def test_ops_queue_empty_state(client):
     """Queue should render empty state when no open claims exist."""
-    user = User.objects.create_user(username="ops_user2", password="password123")
-    client.force_login(user)
+    _login_reviewer(client, username="ops_user2")
 
     url = reverse("ops:queue")
     resp = client.get(url)
@@ -34,8 +42,7 @@ def test_ops_queue_empty_state(client):
 @pytest.mark.django_db
 def test_ops_queue_filter_priority(client):
     """Priority filter should reduce results."""
-    user = User.objects.create_user(username="ops_user3", password="password123")
-    client.force_login(user)
+    _login_reviewer(client, username="ops_user3")
 
     policy = PolicyFactory()
     c1 = Claim.objects.create(

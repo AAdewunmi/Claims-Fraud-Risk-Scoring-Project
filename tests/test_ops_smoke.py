@@ -6,17 +6,26 @@ Ops UI smoke tests.
 from __future__ import annotations
 
 import importlib
-from unittest.mock import patch
 
 import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.test import override_settings
 from django.urls import reverse
 
-from tests.factories import ClaimFactory
+from policylens.apps.claims.models import Claim
+from tests.factories import ClaimFactory, PolicyFactory
 
 User = get_user_model()
+
+
+def _login_reviewer(client, *, username: str) -> None:
+    """Create and log in a reviewer user for queue access tests."""
+    reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
+    user = User.objects.create_user(username=username, password="password123")
+    user.groups.add(reviewer_group)
+    client.force_login(user)
 
 
 @pytest.mark.django_db
@@ -34,8 +43,7 @@ def test_ops_home_redirects_to_queue_for_logged_in_user(client):
 @pytest.mark.django_db
 def test_ops_queue_page_renders_for_logged_in_user(client):
     """Queue page should be accessible and render expected content."""
-    user = User.objects.create_user(username="ops_user", password="password123")
-    client.force_login(user)
+    _login_reviewer(client, username="ops_user")
 
     url = reverse("ops:queue")
     resp = client.get(url)
@@ -45,28 +53,39 @@ def test_ops_queue_page_renders_for_logged_in_user(client):
 
 
 @pytest.mark.django_db
-@patch("policylens.apps.ops.views.build_queue_queryset")
-def test_ops_queue_applies_filters_and_assigns_queue_rank(mock_build_queue_queryset, client):
-    """Queue view should pass filters into builder and assign one-based queue rank."""
-    user = User.objects.create_user(username="ops_filter_user", password="password123")
-    client.force_login(user)
-
-    first = ClaimFactory()
-    second = ClaimFactory()
-    mock_build_queue_queryset.return_value = [first, second]
+def test_ops_queue_applies_filters_and_exposes_pagination_context(client):
+    """Queue view should filter by supported params and expose pagination context."""
+    _login_reviewer(client, username="ops_filter_user")
+    policy = PolicyFactory()
+    c1 = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.HIGH,
+        summary="H",
+        created_by="x",
+        status=Claim.Status.NEW,
+    )
+    c2 = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.LOW,
+        summary="L",
+        created_by="x",
+        status=Claim.Status.NEW,
+    )
 
     url = reverse("ops:queue")
     resp = client.get(url, data={"status": "NEW", "priority": "HIGH", "sla": "breached"})
 
     assert resp.status_code == 200
-    mock_build_queue_queryset.assert_called_once_with(
-        status="NEW",
-        priority="HIGH",
-        sla_filter="breached",
-    )
-    assert resp.context["filters"] == {"status": "NEW", "priority": "HIGH", "sla": "breached"}
-    assert resp.context["items"][0].queue_rank == 1
-    assert resp.context["items"][1].queue_rank == 2
+    assert resp.context["filters"]["status"] == "NEW"
+    assert resp.context["filters"]["priority"] == "HIGH"
+    assert resp.context["filters"]["sla"] == "breached"
+    assert "pagination" in resp.context
+    assert list(resp.context["items"]) == list(resp.context["pagination"].page_obj.object_list)
+    html = resp.content.decode("utf-8")
+    assert f"#{c1.id}" in html
+    assert f"#{c2.id}" not in html
 
 
 @pytest.mark.django_db
