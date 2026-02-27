@@ -1,0 +1,28 @@
+{% extends "customer/base.html" %}
+
+{% block title %}Upload document | PolicyLens{% endblock %}
+
+{% block customer_content %}
+  <section class="card">
+    <h2>Upload document</h2>
+    <p class="muted">Upload a file for claim {{ claim.id }}. Upload is restricted to claims you own.</p>
+
+    {% if error %}
+      <div class="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="form">
+      {% csrf_token %}
+
+      <div class="field">
+        <label for="file">File</label>
+        <input id="file" name="file" type="file" required />
+      </div>
+
+      <div class="button-row">
+        <button class="button" type="submit">Upload</button>
+        <a class="button button-secondary" href="{% url 'customer:claim_detail' claim_id=claim.id %}">Cancel</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}
