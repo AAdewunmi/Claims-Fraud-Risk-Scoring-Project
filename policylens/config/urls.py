@@ -1,11 +1,12 @@
 """
 Root URL configuration for PolicyLens.
 
-This file wires:
-- Django admin
+This file wires the multi-surface UI:
 - public landing
-- accounts login surfaces
-- console role footholds
+- accounts surface logins
+- role consoles
+- ops reviewer surface
+- customer portal surface
 """
 
 from django.conf import settings
@@ -19,11 +20,17 @@ handler403 = "policylens.apps.accounts.views.forbidden_view"
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+
     # Public and accounts surfaces
     path("", include("policylens.apps.public.urls")),
     path("", include("policylens.apps.accounts.urls")),
+
     # Role consoles
     path("", include("policylens.apps.console.urls")),
+
+    # Customer portal
+    path("", include("policylens.apps.customer.urls")),
+
     # API and operational surfaces
     path("api/health/", healthcheck, name="healthcheck"),
     path("api/", include("policylens.apps.claims.api.urls")),

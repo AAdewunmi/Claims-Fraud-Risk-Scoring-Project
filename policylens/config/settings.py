@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "policylens.apps.claims",
     "policylens.apps.ops",
     "policylens.apps.public",
+    "policylens.apps.customer",
 ]
 
 # TODO(accounts): remove this guard once the accounts app ships.
