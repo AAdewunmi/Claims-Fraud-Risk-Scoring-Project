@@ -71,10 +71,5 @@ jobs:
           name: github-actions-unittests
           disable_search: true
           verbose: true
-          override_branch: ${{ github.head_ref || github.ref_name }}
-          override_pr: ${{ github.event.pull_request.number || '' }}
-          override_commit: ${{ github.sha }}
-          override_build: ${{ github.run_id }}
-          override_build_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
