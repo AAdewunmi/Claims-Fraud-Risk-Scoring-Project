@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import models
 from django.http import Http404, HttpResponse
 from django.test import RequestFactory
 
@@ -93,6 +94,34 @@ def test_owned_claims_queryset_returns_none_when_no_strategy(monkeypatch: pytest
     assert list(qs) == []
 
 
+def test_owned_claims_queryset_handles_filter_exceptions_and_returns_none(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    class FakeQS:
+        model = object()
+
+        def filter(self, **_kwargs):
+            raise RuntimeError("filter failed")
+
+        def none(self):
+            return "NONE_QS"
+
+    class FakeManager:
+        def all(self):
+            return FakeQS()
+
+    monkeypatch.setattr(views.Claim, "objects", FakeManager())
+
+    def fake_has_field(_model: Any, field_name: str) -> bool:
+        return field_name in {"customer_user", "created_by"}
+
+    monkeypatch.setattr(views, "_model_has_field", fake_has_field)
+    result = views._owned_claims_queryset_for_user(
+        SimpleNamespace(username="u", email="u@example.com")
+    )
+    assert result == "NONE_QS"
+
+
 def test_apply_stable_ordering_orders_by_created_at_then_id():
     qs = Claim.objects.all()
     ordered = views._apply_stable_ordering(qs)
@@ -148,6 +177,34 @@ def test_resolve_document_model_spec_finds_claim_document():
     assert spec.model is ClaimDocument
     assert spec.claim_fk_field == "claim"
     assert spec.file_field == "file"
+
+
+def test_resolve_document_model_spec_raises_when_no_candidate_model(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    real_import = __import__
+
+    class CandidateModel(models.Model):
+        class Meta:
+            app_label = "tests"
+
+    class FakeClaimsModels:
+        def __dir__(self):
+            return ["CandidateModel"]
+
+    fake_claims_models = FakeClaimsModels()
+    fake_claims_models.CandidateModel = CandidateModel
+
+    def fake_import(name: str, globals=None, locals=None, fromlist=(), level=0):  # noqa: A002
+        if name == "policylens.apps.claims.models":
+            return fake_claims_models
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr("builtins.__import__", fake_import)
+    monkeypatch.setattr(views, "_spec_from_model", lambda _model: (_ for _ in ()).throw(ValueError))
+
+    with pytest.raises(RuntimeError, match="No claim document model found"):
+        views._resolve_document_model_spec()
 
 
 def test_customer_claim_list_forbidden(monkeypatch: pytest.MonkeyPatch):
@@ -354,3 +411,66 @@ def test_customer_document_upload_post_success_with_uploaded_by_fallback(
     assert instance.uploaded_by == "customer_1"
     assert instance.original_filename == "evidence.txt"
     assert instance.saved is True
+
+
+def test_spec_from_model_handles_broken_foreign_key_field():
+    class BrokenRemote:
+        @property
+        def model(self):
+            raise RuntimeError("broken remote model")
+
+    class BrokenForeignKeyField:
+        name = "claim_fk"
+        remote_field = BrokenRemote()
+
+        @staticmethod
+        def get_internal_type() -> str:
+            return "ForeignKey"
+
+    fake_model = SimpleNamespace(_meta=SimpleNamespace(fields=[BrokenForeignKeyField()]))
+    assert views._spec_from_model(fake_model) is None
+
+
+def test_customer_document_upload_ignores_metadata_setattr_errors(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(views, "user_is_customer", lambda _user: True)
+    claim = ClaimFactory()
+    monkeypatch.setattr(views, "_get_owned_claim_or_404", lambda _user, _claim_id: claim)
+
+    created_instances: list[Any] = []
+
+    class FakeDoc:
+        def __init__(self):
+            self.saved = False
+
+        def __setattr__(self, key: str, value: Any) -> None:
+            if key in {"uploaded_by", "original_filename"}:
+                raise TypeError(f"{key} rejected")
+            super().__setattr__(key, value)
+
+        def save(self) -> None:
+            self.saved = True
+            created_instances.append(self)
+
+    spec = views.DocumentModelSpec(
+        model=FakeDoc,
+        claim_fk_field="claim",
+        file_field="file",
+        uploaded_by_field="uploaded_by",
+        original_name_field="original_filename",
+    )
+    monkeypatch.setattr(views, "_resolve_document_model_spec", lambda: spec)
+
+    uploaded = SimpleUploadedFile("evidence.txt", b"hello", content_type="text/plain")
+    request = RequestFactory().post(
+        f"/customer/claims/{claim.id}/documents/upload/",
+        data={"file": uploaded},
+    )
+    request.user = SimpleNamespace(username="customer_2")
+    response = views.customer_document_upload(request, claim_id=claim.id)
+
+    assert response.status_code == 302
+    assert response["Location"] == f"/customer/claims/{claim.id}/"
+    assert len(created_instances) == 1
+    assert created_instances[0].saved is True
