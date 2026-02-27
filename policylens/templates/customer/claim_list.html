@@ -1,0 +1,55 @@
+{% extends "customer/base.html" %}
+
+{% block title %}My claims | PolicyLens{% endblock %}
+
+{% block customer_content %}
+  <section class="card">
+    <h2>My claims</h2>
+    <p class="muted">
+      Claims are ordered deterministically and paginated at {{ pagination.paginator.per_page }} per page.
+    </p>
+
+    <div style="padding: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+      <div style="padding: 16px 16px 8px; background: var(--panel);">
+        {% include "site/_pagination.html" with pagination=pagination %}
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 12px 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">Claim</th>
+              <th style="text-align: left; padding: 12px 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">Status</th>
+              <th style="text-align: left; padding: 12px 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if pagination.paginator.count == 0 %}
+              <tr>
+                <td colspan="3" style="padding: 16px; color: var(--muted);">No claims are available for this account.</td>
+              </tr>
+            {% else %}
+              {% for claim in claims %}
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+                    {{ claim }}
+                  </td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+                    {% if claim.status %}{{ claim.status }}{% else %}<span class="muted">—</span>{% endif %}
+                  </td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+                    <a class="button button-secondary" href="{% url 'customer:claim_detail' claim_id=claim.id %}">View</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="padding: 8px 16px 16px; background: var(--panel);">
+        {% include "site/_pagination.html" with pagination=pagination %}
+      </div>
+    </div>
+  </section>
+{% endblock %}
