@@ -1,0 +1,20 @@
+{% extends "site/base.html" %}
+
+{% block title %}Customer portal | PolicyLens{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1>Customer portal</h1>
+    <p class="muted">
+      This surface is scoped to customer ownership. Claims and uploads are constrained to what the authenticated customer owns.
+    </p>
+
+    <div class="button-row">
+      <a class="button" href="/customer/">My claims</a>
+      <a class="button button-secondary" href="/console/customer/">Customer console</a>
+      <a class="button button-secondary" href="/">Back to landing</a>
+    </div>
+  </section>
+
+  {% block customer_content %}{% endblock %}
+{% endblock %}
