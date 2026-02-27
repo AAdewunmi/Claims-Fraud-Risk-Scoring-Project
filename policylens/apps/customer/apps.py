@@ -12,6 +12,7 @@ from django.apps import AppConfig
 
 class CustomerConfig(AppConfig):
     """Django AppConfig for customer portal surfaces."""
+
     default_auto_field = "django.db.models.BigAutoField"
     name = "policylens.apps.customer"
     verbose_name = "Customer"

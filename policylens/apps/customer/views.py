@@ -11,21 +11,20 @@ Week 6 Day 4 contract
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_http_methods, require_GET
-
-from policylens.apps.core.authz import user_is_customer
-from policylens.apps.core.pagination import paginate_request_queryset
+from django.views.decorators.http import require_GET, require_http_methods
 
 # Import Claim model.
 # If your repo structure differs, update this import to the canonical Claim model.
 from policylens.apps.claims.models import Claim  # type: ignore
+from policylens.apps.core.authz import user_is_customer
+from policylens.apps.core.pagination import paginate_request_queryset
 
 
 @dataclass(frozen=True)
@@ -35,11 +34,12 @@ class DocumentModelSpec:
 
     This keeps the view logic stable even if the underlying document model evolves.
     """
+
     model: Any
     claim_fk_field: str
     file_field: str
-    uploaded_by_field: Optional[str] = None
-    original_name_field: Optional[str] = None
+    uploaded_by_field: str | None = None
+    original_name_field: str | None = None
 
 
 def _model_has_field(model: Any, field_name: str) -> bool:
@@ -139,7 +139,6 @@ def _resolve_document_model_spec() -> DocumentModelSpec:
     This function attempts common names first, then falls back to introspection.
     """
     from django.db import models  # imported lazily to keep module import clean
-    from policylens.apps import claims  # type: ignore
 
     claims_models = __import__("policylens.apps.claims.models", fromlist=["*"])
 
@@ -167,7 +166,7 @@ def _resolve_document_model_spec() -> DocumentModelSpec:
     )
 
 
-def _spec_from_model(model: Any) -> Optional[DocumentModelSpec]:
+def _spec_from_model(model: Any) -> DocumentModelSpec | None:
     """
     Build a DocumentModelSpec from a candidate model if it looks like a claim document model.
     """
@@ -323,7 +322,9 @@ def customer_document_upload(request: HttpRequest, claim_id: int) -> HttpRespons
         except Exception:
             # If field is not a FK to user, fall back to a string when possible.
             try:
-                setattr(instance, spec.uploaded_by_field, getattr(request.user, "username", "customer"))
+                setattr(
+                    instance, spec.uploaded_by_field, getattr(request.user, "username", "customer")
+                )
             except Exception:
                 pass
 
