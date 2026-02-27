@@ -179,7 +179,7 @@ def test_resolve_document_model_spec_finds_claim_document():
     assert spec.file_field == "file"
 
 
-def test_resolve_document_model_spec_raises_when_no_candidate_model(
+def test_resolve_document_model_spec_returns_from_fallback_scan(
     monkeypatch: pytest.MonkeyPatch,
 ):
     real_import = __import__
@@ -194,6 +194,43 @@ def test_resolve_document_model_spec_raises_when_no_candidate_model(
 
     fake_claims_models = FakeClaimsModels()
     fake_claims_models.CandidateModel = CandidateModel
+
+    def fake_import(name: str, globals=None, locals=None, fromlist=(), level=0):  # noqa: A002
+        if name == "policylens.apps.claims.models":
+            return fake_claims_models
+        return real_import(name, globals, locals, fromlist, level)
+
+    expected = views.DocumentModelSpec(
+        model=CandidateModel,
+        claim_fk_field="claim",
+        file_field="file",
+    )
+
+    monkeypatch.setattr("builtins.__import__", fake_import)
+    monkeypatch.setattr(
+        views,
+        "_spec_from_model",
+        lambda model: expected if model is CandidateModel else None,
+    )
+
+    assert views._resolve_document_model_spec() is expected
+
+
+def test_resolve_document_model_spec_raises_when_no_candidate_model(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    real_import = __import__
+
+    class CandidateModelNoSpec(models.Model):
+        class Meta:
+            app_label = "tests"
+
+    class FakeClaimsModels:
+        def __dir__(self):
+            return ["CandidateModelNoSpec"]
+
+    fake_claims_models = FakeClaimsModels()
+    fake_claims_models.CandidateModelNoSpec = CandidateModelNoSpec
 
     def fake_import(name: str, globals=None, locals=None, fromlist=(), level=0):  # noqa: A002
         if name == "policylens.apps.claims.models":
