@@ -1,0 +1,36 @@
+{% extends "customer/base.html" %}
+
+{% block title %}Claim {{ claim.id }} | PolicyLens{% endblock %}
+
+{% block customer_content %}
+  <section class="card">
+    <h2>Claim detail</h2>
+
+    <div class="card">
+      <p><strong>Claim</strong> {{ claim }}</p>
+      <p><strong>Status</strong> {% if claim.status %}{{ claim.status }}{% else %}—{% endif %}</p>
+      {% if claim.summary %}
+        <p><strong>Summary</strong> {{ claim.summary }}</p>
+      {% endif %}
+    </div>
+
+    <div class="button-row">
+      <a class="button" href="{% url 'customer:document_upload' claim_id=claim.id %}">Upload document</a>
+      <a class="button button-secondary" href="{% url 'customer:claim_list' %}">Back to my claims</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Documents</h2>
+
+    {% if documents %}
+      <ul>
+        {% for doc in documents %}
+          <li>{{ doc }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No documents uploaded yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}
