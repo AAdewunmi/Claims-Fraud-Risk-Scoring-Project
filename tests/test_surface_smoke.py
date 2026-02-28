@@ -13,13 +13,14 @@ Deeper contract tests live in the dedicated pagination/ownership test modules.
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.utils import timezone
 
 from policylens.apps.claims.models import Claim, Policy, PolicyHolder, SlaClock
-from django.utils import timezone
-from datetime import timedelta
 
 pytestmark = pytest.mark.django_db
 
@@ -45,15 +46,23 @@ def _create_user(*, username: str, email: str, group: Group):
 
 def _policy_for_email(*, email: str, policy_number: str) -> Policy:
     """Create a policy holder and policy for seeding demo claims."""
-    holder, _ = PolicyHolder.objects.get_or_create(email=email, defaults={"full_name": "Smoke User", "phone": ""})
+    holder, _ = PolicyHolder.objects.get_or_create(
+        email=email, defaults={"full_name": "Smoke User", "phone": ""}
+    )
     policy, _ = Policy.objects.get_or_create(
         policy_number=policy_number,
-        defaults={"holder": holder, "product_type": "Home Insurance", "status": Policy.Status.ACTIVE},
+        defaults={
+            "holder": holder,
+            "product_type": "Home Insurance",
+            "status": Policy.Status.ACTIVE,
+        },
     )
     return policy
 
 
-def _seed_claims_for_pagination(*, customer_user, customer_policy, reviewer_policy, count: int = 16) -> None:
+def _seed_claims_for_pagination(
+    *, customer_user, customer_policy, reviewer_policy, count: int = 16
+) -> None:
     """
     Seed enough claims to demonstrate pagination on both surfaces.
 
@@ -61,7 +70,9 @@ def _seed_claims_for_pagination(*, customer_user, customer_policy, reviewer_poli
     - policy holder email matches customer email
     - created_by matches customer username
     """
-    existing_customer = Claim.objects.filter(policy=customer_policy, created_by=customer_user.username).count()
+    existing_customer = Claim.objects.filter(
+        policy=customer_policy, created_by=customer_user.username
+    ).count()
     to_create_customer = max(0, count - existing_customer)
 
     for i in range(to_create_customer):
@@ -73,9 +84,13 @@ def _seed_claims_for_pagination(*, customer_user, customer_policy, reviewer_poli
             summary=f"Smoke customer claim {i}",
             created_by=customer_user.username,
         )
-        SlaClock.objects.get_or_create(claim=claim, defaults={"due_at": timezone.now() + timedelta(days=1)})
+        SlaClock.objects.get_or_create(
+            claim=claim, defaults={"due_at": timezone.now() + timedelta(days=1)}
+        )
 
-    existing_queue_only = Claim.objects.filter(policy=reviewer_policy, created_by="smoke-reviewer-seed").count()
+    existing_queue_only = Claim.objects.filter(
+        policy=reviewer_policy, created_by="smoke-reviewer-seed"
+    ).count()
     to_create_queue_only = max(0, count - existing_queue_only)
 
     for i in range(to_create_queue_only):
@@ -87,7 +102,9 @@ def _seed_claims_for_pagination(*, customer_user, customer_policy, reviewer_poli
             summary=f"Smoke reviewer claim {i}",
             created_by="smoke-reviewer-seed",
         )
-        SlaClock.objects.get_or_create(claim=claim, defaults={"due_at": timezone.now() + timedelta(days=1)})
+        SlaClock.objects.get_or_create(
+            claim=claim, defaults={"due_at": timezone.now() + timedelta(days=1)}
+        )
 
 
 @pytest.fixture()
@@ -99,12 +116,22 @@ def seeded_roles():
     """
     groups = _ensure_groups()
 
-    admin_user = _create_user(username="smoke_admin", email="smoke_admin@example.com", group=groups["admin"])
-    reviewer_user = _create_user(username="smoke_reviewer", email="smoke_reviewer@example.com", group=groups["reviewer"])
-    customer_user = _create_user(username="smoke_customer", email="smoke_customer@example.com", group=groups["customer"])
+    admin_user = _create_user(
+        username="smoke_admin", email="smoke_admin@example.com", group=groups["admin"]
+    )
+    reviewer_user = _create_user(
+        username="smoke_reviewer", email="smoke_reviewer@example.com", group=groups["reviewer"]
+    )
+    customer_user = _create_user(
+        username="smoke_customer", email="smoke_customer@example.com", group=groups["customer"]
+    )
 
-    reviewer_policy = _policy_for_email(email="smoke_reviewer_holder@example.com", policy_number="SMOKE-PL-REVIEWER-0001")
-    customer_policy = _policy_for_email(email=customer_user.email, policy_number="SMOKE-PL-CUSTOMER-0001")
+    reviewer_policy = _policy_for_email(
+        email="smoke_reviewer_holder@example.com", policy_number="SMOKE-PL-REVIEWER-0001"
+    )
+    customer_policy = _policy_for_email(
+        email=customer_user.email, policy_number="SMOKE-PL-CUSTOMER-0001"
+    )
 
     _seed_claims_for_pagination(
         customer_user=customer_user,
@@ -118,7 +145,9 @@ def seeded_roles():
 
 def _login_via_surface(client, *, login_path: str, username: str) -> None:
     """Log in via the surface entry point."""
-    response = client.post(login_path, data={"username": username, "password": DEMO_PASSWORD}, follow=False)
+    response = client.post(
+        login_path, data={"username": username, "password": DEMO_PASSWORD}, follow=False
+    )
     assert response.status_code in (302, 303)
 
 
