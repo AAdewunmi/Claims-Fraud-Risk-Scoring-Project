@@ -1,7 +1,7 @@
 """
 Create deterministic demo users and seed data for PolicyLens.
 
-Week 6 Day 5 goals
+Sprint 6 goals
 - Create demo admin, reviewer, and customer users.
 - Ensure there are enough claims to demonstrate pagination on:
   - reviewer queue (/ops/queue/) with page size 15
@@ -40,7 +40,7 @@ class DemoUserSpec:
 
 class Command(BaseCommand):
     """
-    Create demo users and seed demo claims for Week 6.
+    Create demo users and seed demo claims for Sprint 6.
 
     Demo users
     - demo_admin (group: admin)
@@ -123,7 +123,7 @@ class Command(BaseCommand):
         )
 
     def _ensure_groups(self) -> tuple[Group, Group, Group]:
-        """Ensure the standard Week 6 groups exist."""
+        """Ensure the standard Sprint 6 groups exist."""
         admin_group, _ = Group.objects.get_or_create(name="admin")
         reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
         customer_group, _ = Group.objects.get_or_create(name="customer")
@@ -153,7 +153,7 @@ class Command(BaseCommand):
         """
         Ensure a PolicyHolder and Policy exist for a given email.
 
-        Customer ownership in Week 6 is satisfied by policy holder email matching
+        Customer ownership in Sprint 6 is satisfied by policy holder email matching
         the customer's email, and by claim.created_by matching the customer's username.
         """
         holder, _ = PolicyHolder.objects.get_or_create(

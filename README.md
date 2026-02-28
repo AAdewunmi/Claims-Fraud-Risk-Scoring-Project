@@ -107,7 +107,9 @@ Snapshot date: **February 28, 2026**
    - `docker compose up --build`
 3. Seed deterministic sample records:
    - `docker compose exec web python manage.py seed_sample_data`
-4. Open app surfaces:
+4. Seed demo users and pagination-focused demo claims:
+   - `docker compose exec web python manage.py create_demo_users`
+5. Open app surfaces:
    - `http://localhost:8000/`
    - `http://localhost:8000/api/health/`
    - `http://localhost:8000/ops/queue/`
@@ -118,6 +120,12 @@ From `seed_sample_data`:
 
 - `reviewer1 / password123`
 - `admin1 / password123`
+
+From `create_demo_users`:
+
+- `demo_admin / pass-12345-strong`
+- `demo_reviewer / pass-12345-strong`
+- `demo_customer / pass-12345-strong`
 
 ## Validation commands
 
@@ -134,7 +142,6 @@ Current priority items for deployment readiness:
 - Tighten security settings by environment (hosts, cookies, headers, static/media strategy).
 - Introduce scheduled/background execution for SLA sweep and bulk scoring.
 - Extend evidence export format options (for example PDF).
-- Finalize demo-data command wiring for deterministic multi-role demo users.
 
 ## Repository layout
 
