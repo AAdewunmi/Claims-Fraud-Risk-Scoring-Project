@@ -1,81 +1,44 @@
 # PolicyLens demo
 
-This demo shows Week 6 multi-surface behaviour with deterministic routing, role boundaries, and pagination.
+This demo validates Sprint 6 multi-surface behavior with deterministic routing,
+role boundaries, and pagination.
 
 ## Prerequisites
 
-The project should be running with the usual Docker Compose stack.
-
-## Create demo users and demo claims
-
-Run the demo seed command:
-
-- docker compose exec web python manage.py create_demo_users
-
-Expected output includes three demo users and counts showing at least 16 claims for:
-- reviewer queue pagination
-- customer claim list pagination
+The project should already be running via Docker Compose.
 
 ## Login entry points
 
-Use the surface entry points, not Django admin login:
+Use the surface entry points:
 
-- Admin login: /login/admin/
-- Reviewer login: /login/reviewer/
-- Customer login: /login/customer/
+- Admin login: `/login/admin/`
+- Reviewer login: `/login/reviewer/`
+- Customer login: `/login/customer/`
 
-Default demo password (set by the command):
-- pass-12345-strong
+## Console-only runbook
 
-## Consoles
+Run:
 
-After login, each entry point routes deterministically to its console:
-
-- Admin console: /console/admin/
-- Reviewer console: /console/reviewer/
-- Customer console: /console/customer/
-
-Admin console links to:
-- Django admin: /admin/
-
-## Pagination demonstrations
-
-Page size is fixed at 15.
-
-### Reviewer queue pagination
-
-Reviewer (or admin) can open:
-
-- /ops/queue/?page=1
-- /ops/queue/?page=2
+- `docker compose exec web python manage.py check`
+- `docker compose exec web python manage.py migrate`
+- `docker compose exec web python -m black . --check`
+- `docker compose exec web python -m ruff check .`
+- `docker compose exec web pytest -q`
+- `docker compose exec web python manage.py seed_sample_data`
+- `docker compose exec web pytest -q tests/test_surface_smoke.py`
 
 Expected:
-- Both pages return 200
-- Ordering is stable
-- Pagination links preserve filters
 
-### Customer claim list pagination
+- `check`, `migrate`, `black --check`, and `ruff check` complete without errors.
+- `pytest -q` passes.
+- `seed_sample_data` prints:
+  `Seeded roles (reviewer, admin), users (reviewer1/admin1), holders, policies, claims.`
+- `tests/test_surface_smoke.py` passes and validates `?page=1` and `?page=2` return `200`
+  for the relevant reviewer and customer surfaces.
 
-Customer (or admin) can open:
+## Seeded local credentials
 
-- /customer/?page=1
-- /customer/?page=2
+From `seed_sample_data`:
 
-Expected:
-- Both pages return 200
-- Only customer-owned claims are listed
-- Pagination links preserve query parameters
-
-## Quick validation commands
-
-Run the quality gates:
-
-- docker compose exec web python manage.py check
-- docker compose exec web python manage.py migrate
-- docker compose exec web python -m black . --check
-- docker compose exec web python -m ruff check .
-- docker compose exec web pytest -q
-
-Run the Sprint 6 smoke test:
-
-- docker compose exec web pytest -q policylens/tests/test_surface_smoke.py
+- `reviewer1 / password123`
+- `admin1 / password123`
