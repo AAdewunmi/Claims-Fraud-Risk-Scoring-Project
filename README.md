@@ -8,67 +8,72 @@
 [![Docker](https://img.shields.io/badge/docker-enabled-2496ED.svg)](https://www.docker.com/)
 [![Docker Compose](https://img.shields.io/badge/docker%20compose-supported-2496ED.svg)](https://docs.docker.com/compose/)
 [![Licence](https://img.shields.io/github/license/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)](https://github.com/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/blob/main/LICENSE)
-[![Test Coverage](https://img.shields.io/codecov/c/github/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)
 [![Coverage Status](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/branch/main/graph/badge.svg)](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)
 
-# UNDER CONSTRUCTION
+# PolicyLens
 
-# PolicyLens: Insurance Claims Fraud Risk Scoring System
+Insurance claims workflow platform with API-first domain logic, role-specific web surfaces, and auditable fraud-risk triage.
 
-PolicyLens is an insurance ops and compliance workflow tool built API-first for core workflows, with a server-rendered ops UI layered on top. It helps teams prioritise claims using fraud risk scoring, deterministic SLA rules, and exportable audit evidence.
+## Status
 
-Status timestamp: **February 17, 2026**.
+**Production app build in progress**  
+Snapshot date: **February 28, 2026**
 
-## Product stance
+- Core product workflows are implemented and running in Docker.
+- CI quality gates are active (Black, Ruff, pytest, coverage threshold).
+- Multi-surface routing is live for admin, reviewer, and customer roles.
+- Production deployment profile and operational hardening are the active build track.
 
-API-first for core workflow, server-rendered UI for ops.
+## What is live today
 
-- DRF serializers define the canonical contract.
-- Domain services implement workflow behaviour.
-- Ops UI uses Django templates + HTMX without duplicating workflow logic.
+### Core domain and API
 
-## Milestone status (Implemented vs Planned)
+- Claim intake for claim and policy-change types.
+- Document upload, internal notes, and review decisions.
+- Append-only audit events and JSON evidence export.
+- Queue API with status, priority, and SLA filtering.
+- ML scoring endpoint with persisted score metadata and reason codes.
+- Idempotency support for write endpoints.
+- Health check endpoint at `/api/health/`.
 
-### Implemented
+### Web surfaces
 
-- **Milestone W1 (January 2026):** Django/DRF project setup, healthcheck endpoint, Docker Compose dev stack.
-- **Milestone W2 (January 2026):** Claims/documents/notes/decisions APIs, role-based decision permissions, sample data seeding.
-- **Milestone W3 (February 2026):** Queue API ordering by SLA/priority, audit events API, JSON audit export, idempotency for write endpoints.
-- **Milestone W4 (February 2026):** Fraud scoring persistence (score/label/reason codes + model metadata), training and scoring management commands.
-- **Milestone W5 (started February 2026):** Ops UI shell and queue route; queue backend now uses shared queue builder logic.
+- Public landing page with role entry points.
+- Surface-specific login routes:
+  - `/login/admin/`
+  - `/login/reviewer/`
+  - `/login/customer/`
+- Role-gated console home routes:
+  - `/console/admin/`
+  - `/console/reviewer/`
+  - `/console/customer/`
+- Ops surface:
+  - `/ops/queue/` with pagination and filter-preserving links
+  - `/ops/claims/{id}/` claim detail page
+  - HTMX actions for notes, documents, decisions, and ML scoring
+- Customer surface:
+  - `/customer/` paginated claim list
+  - `/customer/claims/{id}/` detail view
+  - `/customer/claims/{id}/documents/upload/`
 
-### Planned
+### Quality baseline
 
-- **Milestone W5 completion target (February 18-21, 2026):** Claim detail UI route/template wiring and HTMX actions.
-- **Milestone W6 target (late February 2026):** Evidence export polish and richer reviewer cues.
-- **Milestone W7 target (March 2026):** Production deployment runbook (Render/VPS), production compose profile, and demo script.
-- **Milestone W8 target (March 2026):** Performance checks and more edge-case/idempotency test coverage.
+- Latest local run: **166 tests passed**, coverage **94.43%**.
+- CI enforces coverage floor at **80%**.
+- Test suite includes API, UI surface, authz, pagination, idempotency, SLA, and ML contract checks.
 
-## Capabilities by status
+## Sprint delivery summary
 
-### Implemented now (as of February 17, 2026)
+- **Sprint 1:** Project setup, Docker + Postgres, baseline API and test harness.
+- **Sprint 2:** Claim workflow APIs, notes/documents/decisions, seed data path.
+- **Sprint 3:** Queue ordering, audit events, audit export JSON, idempotency layer.
+- **Sprint 4:** ML feature contract, training/scoring flow, persisted score metadata.
+- **Sprint 5:** Multi-surface web app, console routing, ops and customer surface coverage.
+- **Sprint 6 (current):** Production hardening and deployment readiness.
 
-- Claim and policy-change intake with structured metadata.
-- Fraud risk scoring endpoint and persisted score metadata.
-- Reviewer queue API prioritised by SLA and priority, with filtering.
-- Document upload and metadata capture.
-- Internal notes and decision history.
-- Append-only audit events.
-- Exportable audit evidence as JSON.
-- Ops queue page (server-rendered) behind login.
+## API surface map
 
-### Planned (not fully shipped yet)
-
-- Ops claim detail page with full timeline sections and actions.
-- HTMX-driven create actions (notes, docs, decisions, scoring) from the UI.
-- PDF audit export format.
-- Production simulation stack with dedicated prod compose file + Nginx/Gunicorn profile.
-- Demo script and docs/runbook directory.
-
-## API surfaces
-
-### Implemented endpoints
-
+- `GET /api/health/`
 - `POST /api/claims/`
 - `GET /api/claims/?status=&priority=`
 - `GET /api/claims/{id}/`
@@ -76,98 +81,72 @@ API-first for core workflow, server-rendered UI for ops.
 - `POST /api/claims/{id}/notes/`
 - `POST /api/claims/{id}/decisions/`
 - `POST /api/claims/{id}/ml-score/`
-- `GET /api/queue/claims/`
-- `GET /api/queue/claims/?status=&priority=&sla=breached|due_soon|ok`
 - `GET /api/claims/{id}/audit-events/`
 - `GET /api/claims/{id}/audit-export/`
-- `GET /api/health/`
+- `GET /api/queue/claims/?status=&priority=&sla=breached|due_soon|ok`
 
-### Planned endpoints/formats
+## Architecture
 
-- `GET /api/claims/{id}/audit-export/?format=pdf` (planned format extension)
+- Django + DRF application (`policylens/`) with PostgreSQL persistence.
+- Service-layer workflow logic in `policylens/apps/claims/services.py`.
+- Role and surface authorization helpers in `policylens/apps/core/authz.py`.
+- Shared pagination contract in `policylens/apps/core/pagination.py`.
+- Server-rendered templates with HTMX partial updates for low-friction ops actions.
 
-## Ops UI surfaces
-
-### Implemented
-
-- `/ops/` (redirect to queue)
-- `/ops/queue/`
-
-### Planned
-
-- `/ops/claims/{id}/` claim detail page route and full template wiring
-
-## Repository layout (current)
-
-- `manage.py` Django management entrypoint
-- `policylens/` project and apps
-- `policylens/apps/claims/` domain models, services, API, export, ML, queue logic
-- `policylens/apps/ops/` server-rendered UI
-- `policylens/apps/core/` shared utilities (including idempotency)
-- `tests/` pytest suite
-- `artifacts/` local model artifacts
-
-## Quickstart (development)
+## Local development
 
 ### Prerequisites
 
-- Docker and Docker Compose
+- Docker Desktop with Compose v2
 
-### Setup
+### Quick start
 
-1. Create env file:
+1. Copy environment file:
    - `cp .env.example .env`
-2. Start stack:
+2. Build and start services:
    - `docker compose up --build`
-3. (Optional, if needed) run migrations manually:
-   - `docker compose exec web python manage.py migrate --noinput`
-4. Seed sample data (also seeds reviewer/admin users):
+3. Seed deterministic sample records:
    - `docker compose exec web python manage.py seed_sample_data`
-5. Open:
-   - API health: `http://localhost:8000/api/health/`
-   - Ops UI: `http://localhost:8000/ops/`
+4. Open app surfaces:
+   - `http://localhost:8000/`
+   - `http://localhost:8000/api/health/`
+   - `http://localhost:8000/ops/queue/`
 
-Demo users from seed command:
+### Seeded users
+
+From `seed_sample_data`:
+
 - `reviewer1 / password123`
 - `admin1 / password123`
 
-## Tests and quality gates
+## Validation commands
 
-Run tests:
-
+- `docker compose exec web python -m black . --check`
+- `docker compose exec web python -m ruff check .`
 - `docker compose exec web pytest -q --cov=policylens --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-fail-under=80`
 
-Run lint and format checks:
+## Production hardening backlog
 
-- `docker compose exec web python -m ruff check .`
-- `docker compose exec web python -m black . --check`
+Current priority items for deployment readiness:
 
-CI enforces:
+- Add production runtime profile (Gunicorn + reverse proxy).
+- Add production compose/deploy artifacts and environment split.
+- Tighten security settings by environment (hosts, cookies, headers, static/media strategy).
+- Introduce scheduled/background execution for SLA sweep and bulk scoring.
+- Extend evidence export format options (for example PDF).
+- Finalize demo-data command wiring for deterministic multi-role demo users.
 
-- ruff
-- black `--check`
-- pytest with Postgres
-- coverage threshold (`>= 80%`)
+## Repository layout
 
-Coverage report:
-
-- `https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project`
-
-## Planned production simulation track
-
-Planned artifacts (not present yet in this branch):
-
-- `docker-compose.prod.yml`
-- production web server profile (Gunicorn)
-- Nginx reverse proxy configuration
-- demo script (`scripts/demo.sh`)
-- deployment docs/runbook directory
-
-## Non-goals
-
-- Replacing insurer core systems.
-- Heavy ML research (the scoring layer is intentionally lightweight and governance-oriented).
+- `policylens/apps/claims/` claims domain, API, queue, export, ML
+- `policylens/apps/ops/` ops views, templates, HTMX endpoints
+- `policylens/apps/customer/` customer portal views and templates
+- `policylens/apps/accounts/` surface login and access flows
+- `policylens/apps/console/` role console surfaces
+- `policylens/apps/core/` authz, idempotency, pagination utilities
+- `tests/` integration and contract tests
+- `docs/` project documentation
 
 ## License
 
-MIT License. See `LICENSE`.
+MIT. See `LICENSE`.
