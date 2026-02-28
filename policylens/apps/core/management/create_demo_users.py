@@ -31,6 +31,7 @@ from policylens.apps.claims.models import Claim, Policy, PolicyHolder, SlaClock
 @dataclass(frozen=True)
 class DemoUserSpec:
     """Definition of a demo user and its role group membership."""
+
     username: str
     email: str
     group_name: str
@@ -117,7 +118,9 @@ class Command(BaseCommand):
         self.stdout.write(f"created_reviewer_queue_claims={created_reviewer}")
         self.stdout.write(f"created_customer_owned_claims={created_customer}")
         self.stdout.write(f"total_reviewer_queue_claims={self._reviewer_queue_claim_count()}")
-        self.stdout.write(f"total_customer_owned_claims={self._customer_owned_claim_count(customer_user)}")
+        self.stdout.write(
+            f"total_customer_owned_claims={self._customer_owned_claim_count(customer_user)}"
+        )
 
     def _ensure_groups(self) -> tuple[Group, Group, Group]:
         """Ensure the standard Week 6 groups exist."""
@@ -173,7 +176,9 @@ class Command(BaseCommand):
 
     def _customer_owned_claim_count(self, customer_user: Any) -> int:
         """Count customer-owned claims created by this demo seed for the given customer user."""
-        return Claim.objects.filter(policy__holder__email=customer_user.email, created_by=customer_user.username).count()
+        return Claim.objects.filter(
+            policy__holder__email=customer_user.email, created_by=customer_user.username
+        ).count()
 
     def _ensure_reviewer_queue_claims(self, policy: Policy) -> int:
         """
