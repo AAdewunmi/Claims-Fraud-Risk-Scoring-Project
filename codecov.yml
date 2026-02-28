@@ -7,6 +7,7 @@ coverage:
   status:
     project:
       default:
+        context: "Codecov/Project"
         flags:
           - unittests
         target: 80%
