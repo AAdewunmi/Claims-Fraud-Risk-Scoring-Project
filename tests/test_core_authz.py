@@ -22,6 +22,8 @@ def test_role_helpers_deny_anonymous():
     assert user_is_admin(anonymous) is False
     assert user_is_reviewer(anonymous) is False
     assert user_is_customer(anonymous) is False
+    assert user_has_reviewer_write_access(anonymous) is False
+    assert user_has_customer_write_access(anonymous) is False
 
 
 def test_user_in_any_group_denies_unauthenticated_user():
