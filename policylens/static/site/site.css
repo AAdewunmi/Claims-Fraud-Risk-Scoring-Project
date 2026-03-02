@@ -74,6 +74,7 @@ p {
   color: #b42318;
   text-decoration: none;
   font-weight: 900;
+  font-size: 20px;
   letter-spacing: 0.2px;
 }
 
@@ -240,6 +241,12 @@ button.button {
   margin-top: 8px;
   margin-bottom: 14px;
   font-size: clamp(2rem, 4vw, 3.3rem);
+}
+
+.landing-title-brand {
+  color: #b42318;
+  font-size: 20px;
+  font-weight: 900;
 }
 
 .lead {
