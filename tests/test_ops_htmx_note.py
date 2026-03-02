@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
@@ -386,3 +387,56 @@ def test_htmx_add_decision_returns_decisions_in_reverse_decided_at_order(client,
     assert len(decisions) == 2
     assert decisions[0].notes == "Second decision"
     assert decisions[1].notes == "First decision"
+
+
+@pytest.mark.django_db
+def test_admin_user_has_read_only_access_for_reviewer_htmx_actions(client):
+    """Admin-only users should not be able to mutate reviewer claim state via HTMX endpoints."""
+    admin_group, _ = Group.objects.get_or_create(name="admin")
+    user = User.objects.create_user(username="ops_admin_read_only", password="password123")
+    user.groups.add(admin_group)
+    client.force_login(user)
+
+    policy = PolicyFactory()
+    claim = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.NORMAL,
+        summary="Read-only reviewer actions",
+        created_by="seed",
+        status=Claim.Status.NEW,
+    )
+
+    note_resp = client.post(
+        reverse("ops:htmx-add-note", kwargs={"claim_id": claim.id}),
+        data={"body": "Should not persist"},
+        HTTP_HX_REQUEST="true",
+    )
+    decision_resp = client.post(
+        reverse("ops:htmx-add-decision", kwargs={"claim_id": claim.id}),
+        data={"decision": ReviewDecision.Decision.APPROVE, "notes": "Should not persist"},
+        HTTP_HX_REQUEST="true",
+    )
+    score_resp = client.post(
+        reverse("ops:htmx-score-claim", kwargs={"claim_id": claim.id}),
+        HTTP_HX_REQUEST="true",
+    )
+    upload_resp = client.post(
+        reverse("ops:htmx-upload-document", kwargs={"claim_id": claim.id}),
+        data={
+            "file": SimpleUploadedFile("evidence.txt", b"bytes", content_type="text/plain"),
+            "original_filename": "evidence.txt",
+        },
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert note_resp.status_code == 403
+    assert decision_resp.status_code == 403
+    assert score_resp.status_code == 403
+    assert upload_resp.status_code == 403
+
+    claim.refresh_from_db()
+    assert claim.notes.count() == 0
+    assert claim.decisions.count() == 0
+    assert claim.documents.count() == 0
+    assert not hasattr(claim, "ml_score")

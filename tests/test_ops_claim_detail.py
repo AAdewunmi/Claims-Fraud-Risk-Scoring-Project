@@ -9,6 +9,7 @@ from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.utils import timezone
 
@@ -22,6 +23,8 @@ User = get_user_model()
 def test_ops_claim_detail_renders_sections(client):
     """Claim detail page should render core sections."""
     user = User.objects.create_user(username="ops_user4", password="password123")
+    reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
+    user.groups.add(reviewer_group)
     client.force_login(user)
 
     policy = PolicyFactory()

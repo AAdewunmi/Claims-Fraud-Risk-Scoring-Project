@@ -27,6 +27,12 @@
     </div>
   </div>
 
+  {% if read_only %}
+    <div class="alert alert-info" role="alert">
+      Read-only admin view: scoring, document upload, notes, and decisions are disabled on this surface.
+    </div>
+  {% endif %}
+
   <div class="row g-3">
     <div class="col-12 col-lg-4">
       <div class="card shadow-sm mb-3">

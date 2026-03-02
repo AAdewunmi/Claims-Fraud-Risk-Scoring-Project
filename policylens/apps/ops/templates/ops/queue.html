@@ -10,6 +10,9 @@
       Prioritized by SLA and priority to support triage, scoring, and adjudication workflows.
     </p>
     <p class="muted"><strong>Signed in as:</strong> {{ request.user.username }}</p>
+    {% if read_only %}
+      <p class="muted"><strong>Mode:</strong> Read-only admin view</p>
+    {% endif %}
     <div class="button-row">
       <form method="post" action="{% url 'accounts:logout_to_landing' %}">
         {% csrf_token %}

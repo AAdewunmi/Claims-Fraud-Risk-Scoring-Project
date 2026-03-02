@@ -23,7 +23,11 @@ from django.views.decorators.http import require_GET, require_http_methods
 # Import Claim model.
 # If your repo structure differs, update this import to the canonical Claim model.
 from policylens.apps.claims.models import Claim  # type: ignore
-from policylens.apps.core.authz import user_is_customer
+from policylens.apps.core.authz import (
+    user_has_customer_write_access,
+    user_is_admin,
+    user_is_customer,
+)
 from policylens.apps.core.pagination import paginate_request_queryset
 
 
@@ -225,6 +229,7 @@ def customer_claim_list(request: HttpRequest) -> HttpResponse:
     """
     if not user_is_customer(request.user):
         return render(request, "site/forbidden.html", status=403)
+    read_only = user_is_admin(request.user) and not user_has_customer_write_access(request.user)
 
     qs = _owned_claims_queryset_for_user(request.user)
     qs = _apply_stable_ordering(qs)
@@ -241,6 +246,7 @@ def customer_claim_list(request: HttpRequest) -> HttpResponse:
         {
             "pagination": pagination,
             "claims": pagination.page_obj.object_list,
+            "read_only": read_only,
         },
     )
 
@@ -256,6 +262,7 @@ def customer_claim_detail(request: HttpRequest, claim_id: int) -> HttpResponse:
     """
     if not user_is_customer(request.user):
         return render(request, "site/forbidden.html", status=403)
+    read_only = user_is_admin(request.user) and not user_has_customer_write_access(request.user)
 
     claim = _get_owned_claim_or_404(request.user, claim_id)
 
@@ -274,6 +281,7 @@ def customer_claim_detail(request: HttpRequest, claim_id: int) -> HttpResponse:
         {
             "claim": claim,
             "documents": documents,
+            "read_only": read_only,
         },
     )
 
@@ -289,6 +297,8 @@ def customer_document_upload(request: HttpRequest, claim_id: int) -> HttpRespons
     - Upload is rejected for non-owned claims via 404.
     """
     if not user_is_customer(request.user):
+        return render(request, "site/forbidden.html", status=403)
+    if user_is_admin(request.user) and not user_has_customer_write_access(request.user):
         return render(request, "site/forbidden.html", status=403)
 
     claim = _get_owned_claim_or_404(request.user, claim_id)

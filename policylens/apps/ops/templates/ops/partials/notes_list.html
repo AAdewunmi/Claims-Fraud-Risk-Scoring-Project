@@ -4,22 +4,32 @@
     <div class="h6 mb-0">Notes</div>
   </div>
 
-  <form
-    hx-post="{% url 'ops:htmx-add-note' claim_id=claim.id %}"
-    hx-target="#notes-panel"
-    hx-swap="outerHTML"
-    class="mb-3"
-    method="post"
-  >
-    {% csrf_token %}
-    <div class="mb-2">
-      <textarea name="body" class="form-control" rows="3" placeholder="Add a note for reviewers">{{ form.body.value|default:"" }}</textarea>
-      {% if form.errors.body %}
-        <div class="text-danger small mt-1">{{ form.errors.body.0 }}</div>
-      {% endif %}
+  {% if error %}
+    <div class="alert alert-warning py-2 mb-3">
+      <div class="small">{{ error }}</div>
     </div>
-    <button class="btn btn-primary btn-sm" type="submit">Add note</button>
-  </form>
+  {% endif %}
+
+  {% if read_only %}
+    <div class="text-muted mb-3">Read-only mode: adding notes is disabled for admin view.</div>
+  {% else %}
+    <form
+      hx-post="{% url 'ops:htmx-add-note' claim_id=claim.id %}"
+      hx-target="#notes-panel"
+      hx-swap="outerHTML"
+      class="mb-3"
+      method="post"
+    >
+      {% csrf_token %}
+      <div class="mb-2">
+        <textarea name="body" class="form-control" rows="3" placeholder="Add a note for reviewers">{{ form.body.value|default:"" }}</textarea>
+        {% if form.errors.body %}
+          <div class="text-danger small mt-1">{{ form.errors.body.0 }}</div>
+        {% endif %}
+      </div>
+      <button class="btn btn-primary btn-sm" type="submit">Add note</button>
+    </form>
+  {% endif %}
 
   {% if claim.notes.all|length == 0 %}
     <div class="text-muted">No notes yet.</div>

@@ -27,7 +27,11 @@ from policylens.apps.claims.models import (
     InternalNote,
     ReviewDecision,
 )
-from policylens.apps.core.authz import user_is_reviewer
+from policylens.apps.core.authz import (
+    user_has_reviewer_write_access,
+    user_is_admin,
+    user_is_reviewer,
+)
 from policylens.apps.core.pagination import paginate_request_queryset
 from policylens.apps.ops.forms import AddNoteForm, DecisionForm
 
@@ -140,6 +144,8 @@ def ops_queue(request: HttpRequest) -> HttpResponse:
         "ops/queue.html",
         {
             "page_title": "Review queue",
+            "read_only": user_is_admin(request.user)
+            and not user_has_reviewer_write_access(request.user),
             "pagination": pagination,
             "claims": pagination.page_obj.object_list,
             "items": pagination.page_obj.object_list,
@@ -160,6 +166,9 @@ queue_view = ops_queue
 @login_required
 def claim_detail_view(request: HttpRequest, claim_id: int) -> HttpResponse:
     """Render claim detail page with timeline sections."""
+    if not user_is_reviewer(request.user):
+        return render(request, "site/forbidden.html", status=403)
+
     claim = get_object_or_404(
         Claim.objects.select_related(
             "policy", "policy__holder", "sla_clock", "ml_score"
@@ -180,5 +189,7 @@ def claim_detail_view(request: HttpRequest, claim_id: int) -> HttpResponse:
             "claim": claim,
             "note_form": AddNoteForm(),
             "decision_form": DecisionForm(),
+            "read_only": user_is_admin(request.user)
+            and not user_has_reviewer_write_access(request.user),
         },
     )

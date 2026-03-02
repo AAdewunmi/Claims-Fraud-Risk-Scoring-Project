@@ -135,6 +135,18 @@ def test_admin_can_open_reviewer_and_customer_dashboards(
     assert expected_heading in response.content
 
 
+@pytest.mark.parametrize("console_path", ["/console/reviewer/", "/console/customer/"])
+def test_admin_sees_read_only_mode_on_reviewer_and_customer_surfaces(
+    client, users, user_password, console_path
+):
+    client.post(
+        "/login/admin/", data={"username": users["admin"].username, "password": user_password}
+    )
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert b"Read-only" in response.content
+
+
 @pytest.mark.parametrize(
     "role, console_path, heading",
     [

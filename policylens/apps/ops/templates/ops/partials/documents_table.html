@@ -10,25 +10,29 @@
     </div>
   {% endif %}
 
-  <form
-    hx-post="{% url 'ops:htmx-upload-document' claim_id=claim.id %}"
-    hx-target="#documents-panel"
-    hx-swap="outerHTML"
-    class="row g-2 mb-3"
-    method="post"
-    enctype="multipart/form-data"
-  >
-    {% csrf_token %}
-    <div class="col-12 col-md-6">
-      <input class="form-control" type="file" name="file" required>
-    </div>
-    <div class="col-12 col-md-4">
-      <input class="form-control" type="text" name="original_filename" placeholder="Original filename" required>
-    </div>
-    <div class="col-12 col-md-2 d-grid">
-      <button class="btn btn-outline-primary" type="submit">Upload</button>
-    </div>
-  </form>
+  {% if read_only %}
+    <div class="text-muted mb-3">Read-only mode: uploading documents is disabled for admin view.</div>
+  {% else %}
+    <form
+      hx-post="{% url 'ops:htmx-upload-document' claim_id=claim.id %}"
+      hx-target="#documents-panel"
+      hx-swap="outerHTML"
+      class="row g-2 mb-3"
+      method="post"
+      enctype="multipart/form-data"
+    >
+      {% csrf_token %}
+      <div class="col-12 col-md-6">
+        <input class="form-control" type="file" name="file" required>
+      </div>
+      <div class="col-12 col-md-4">
+        <input class="form-control" type="text" name="original_filename" placeholder="Original filename" required>
+      </div>
+      <div class="col-12 col-md-2 d-grid">
+        <button class="btn btn-outline-primary" type="submit">Upload</button>
+      </div>
+    </form>
+  {% endif %}
 
   {% if claim.documents.all|length == 0 %}
     <div class="text-muted">No documents uploaded.</div>
