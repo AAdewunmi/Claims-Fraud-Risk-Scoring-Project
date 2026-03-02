@@ -146,6 +146,12 @@ main.container {
   border-color: rgba(19, 38, 60, 0.16);
 }
 
+button.button {
+  font-family: "Source Sans 3", "Avenir Next", "Helvetica Neue", sans-serif;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
 .form {
   margin-top: 18px;
 }

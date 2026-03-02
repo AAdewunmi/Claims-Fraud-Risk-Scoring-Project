@@ -16,6 +16,9 @@
     <div class="button-row">
       <a class="button" href="/customer/">My claims</a>
       <a class="button button-secondary" href="/console/customer/">Customer console</a>
+      {% if read_only %}
+        <a class="button button-secondary" href="{% url 'console:admin_home' %}">Back to admin console</a>
+      {% endif %}
       <a class="button button-secondary" href="/">Back to landing</a>
     </div>
   </section>

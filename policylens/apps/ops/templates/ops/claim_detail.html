@@ -30,6 +30,9 @@
   {% if read_only %}
     <div class="alert alert-info" role="alert">
       Read-only admin view: scoring, document upload, notes, and decisions are disabled on this surface.
+      <div class="mt-2">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'console:admin_home' %}">Back to admin console</a>
+      </div>
     </div>
   {% endif %}
 

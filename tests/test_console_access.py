@@ -145,6 +145,8 @@ def test_admin_sees_read_only_mode_on_reviewer_and_customer_surfaces(
     response = client.get(console_path)
     assert response.status_code == 200
     assert b"Read-only" in response.content
+    assert b"Back to admin console" in response.content
+    assert b"/console/admin/" in response.content
 
 
 @pytest.mark.parametrize("console_path", ["/console/reviewer/", "/console/customer/"])
@@ -156,6 +158,8 @@ def test_admin_without_surface_intent_still_gets_read_only_surfaces(client, user
     response = client.get(console_path)
     assert response.status_code == 200
     assert b"Read-only" in response.content
+    assert b"Back to admin console" in response.content
+    assert b"/console/admin/" in response.content
 
 
 @pytest.mark.parametrize("console_path", ["/console/reviewer/", "/console/customer/"])
@@ -175,6 +179,8 @@ def test_multi_role_user_logged_via_admin_entry_gets_read_only_surfaces(
     response = client.get(console_path)
     assert response.status_code == 200
     assert b"Read-only" in response.content
+    assert b"Back to admin console" in response.content
+    assert b"/console/admin/" in response.content
 
 
 @pytest.mark.parametrize(

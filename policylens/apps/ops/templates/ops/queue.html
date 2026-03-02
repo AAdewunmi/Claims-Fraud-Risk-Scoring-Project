@@ -14,7 +14,10 @@
       <p class="muted"><strong>Mode:</strong> Read-only admin view</p>
     {% endif %}
     <div class="button-row">
-      <form method="post" action="{% url 'accounts:logout_to_landing' %}">
+      {% if read_only %}
+        <a class="button button-secondary" href="{% url 'console:admin_home' %}">Back to admin console</a>
+      {% endif %}
+      <form method="post" action="{% url 'accounts:logout_to_landing' %}" style="margin: 0;">
         {% csrf_token %}
         <button class="button button-secondary" type="submit">Back to landing</button>
       </form>
