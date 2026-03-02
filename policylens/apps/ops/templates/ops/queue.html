@@ -3,6 +3,18 @@
 
 {% block title %}Reviewer queue | PolicyLens{% endblock %}
 
+{% block header_nav %}
+  <nav class="nav" aria-label="Reviewer queue navigation">
+    {% if read_only %}
+      <a class="nav-link" href="{% url 'console:admin_home' %}">Back to admin console</a>
+    {% endif %}
+    <form class="nav-inline-form" method="post" action="{% url 'accounts:logout_to_landing' %}">
+      {% csrf_token %}
+      <button class="nav-link nav-link-button" type="submit">Reviewer logout</button>
+    </form>
+  </nav>
+{% endblock %}
+
 {% block content %}
   <section class="card">
     <h1>Reviewer queue</h1>
@@ -13,15 +25,6 @@
     {% if read_only %}
       <p class="muted"><strong>Mode:</strong> Read-only admin view</p>
     {% endif %}
-    <div class="button-row">
-      {% if read_only %}
-        <a class="button button-secondary" href="{% url 'console:admin_home' %}">Back to admin console</a>
-      {% endif %}
-      <form method="post" action="{% url 'accounts:logout_to_landing' %}" style="margin: 0;">
-        {% csrf_token %}
-        <button class="button button-secondary" type="submit">Back to landing</button>
-      </form>
-    </div>
   </section>
 
   <section class="card">

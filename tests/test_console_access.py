@@ -228,14 +228,14 @@ def test_console_surfaces_show_authenticated_username(
     assert users[role].username.encode() in response.content
 
 
-def test_reviewer_back_to_landing_logs_out_and_redirects_home(client, users, user_password):
+def test_reviewer_logout_logs_out_and_redirects_home(client, users, user_password):
     client.post(
         "/login/reviewer/", data={"username": users["reviewer"].username, "password": user_password}
     )
 
     queue_response = client.get("/console/reviewer/")
     assert queue_response.status_code == 200
-    assert b"Back to landing" in queue_response.content
+    assert b"Reviewer logout" in queue_response.content
 
     logout_response = client.post(reverse("accounts:logout_to_landing"), follow=False)
     assert logout_response.status_code == 302
