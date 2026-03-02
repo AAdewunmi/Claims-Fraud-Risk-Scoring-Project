@@ -113,3 +113,25 @@ def test_customer_cannot_open_other_users_claim_detail(client, users):
 
     not_owned = client.get(f"/customer/claims/{claim2.id}/")
     assert not_owned.status_code == 404
+
+
+def test_customer_cannot_open_second_owned_claim_when_multiple_exist(client, users):
+    policy1 = _make_policy_for_email("cust1@example.com")
+
+    first = _make_claim_for_policy(policy1, idx=1, created_by=users["c1"].username)
+    second = _make_claim_for_policy(policy1, idx=2, created_by=users["c1"].username)
+
+    primary = (
+        Claim.objects.filter(policy=policy1, created_by=users["c1"].username)
+        .order_by("-created_at", "id")
+        .first()
+    )
+    assert primary is not None
+
+    client.force_login(users["c1"])
+    allowed = client.get(f"/customer/claims/{primary.id}/")
+    assert allowed.status_code == 200
+
+    secondary_id = first.id if primary.id == second.id else second.id
+    blocked = client.get(f"/customer/claims/{secondary_id}/")
+    assert blocked.status_code == 404

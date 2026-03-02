@@ -122,6 +122,36 @@ def _apply_stable_ordering(qs: Any) -> Any:
     return qs.order_by(*fields) if fields else qs
 
 
+def _restrict_to_primary_claim(qs: Any) -> Any:
+    """
+    Enforce one-claim-per-customer visibility for customer surfaces.
+
+    We keep one deterministic "primary" claim (the first claim in the ordered
+    queryset) and hide additional owned claims from customer pages.
+    """
+    primary_claim_id = None
+
+    try:
+        primary_claim_id = qs.values_list("id", flat=True).first()
+    except Exception:
+        try:
+            first_claim = qs.first()
+            primary_claim_id = getattr(first_claim, "id", None)
+        except Exception:
+            primary_claim_id = None
+
+    if primary_claim_id is None:
+        try:
+            return qs.none()
+        except Exception:
+            return qs
+
+    try:
+        return qs.filter(pk=primary_claim_id)
+    except Exception:
+        return qs
+
+
 def _customer_write_enabled(request: HttpRequest) -> bool:
     """
     Return True when customer write actions are enabled for this request.
@@ -145,6 +175,8 @@ def _get_owned_claim_or_404(user: Any, claim_id: int) -> Claim:
     404 is used (not 403) to avoid leaking whether a claim id exists.
     """
     qs = _owned_claims_queryset_for_user(user)
+    qs = _apply_stable_ordering(qs)
+    qs = _restrict_to_primary_claim(qs)
     try:
         return qs.get(pk=claim_id)
     except Claim.DoesNotExist:
@@ -252,6 +284,7 @@ def customer_claim_list(request: HttpRequest) -> HttpResponse:
 
     qs = _owned_claims_queryset_for_user(request.user)
     qs = _apply_stable_ordering(qs)
+    qs = _restrict_to_primary_claim(qs)
 
     pagination = paginate_request_queryset(
         request,

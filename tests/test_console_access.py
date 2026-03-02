@@ -206,6 +206,9 @@ def test_role_console_renders_for_correct_role(
     response = client.get(console_path)
     assert response.status_code == 200
     assert heading in response.content
+    if role == "customer":
+        assert b"Customer logout" in response.content
+        assert b"Back to landing" not in response.content
 
 
 @pytest.mark.parametrize(
