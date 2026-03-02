@@ -13,3 +13,12 @@
 .card.shadow-sm {
   box-shadow: var(--pl-card-shadow) !important;
 }
+
+.pl-home-link {
+  color: #b42318 !important;
+  font-weight: 900 !important;
+}
+
+.pl-home-link:hover {
+  color: #8f2419 !important;
+}

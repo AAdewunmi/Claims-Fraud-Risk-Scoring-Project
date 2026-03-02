@@ -115,6 +115,11 @@ def test_admin_console_renders_and_links_to_django_admin_and_other_consoles(
     assert b"/admin/" in response.content
     assert b"/console/reviewer/" in response.content
     assert b"/console/customer/" in response.content
+    assert b"Django admin" in response.content
+    assert b"Review console" in response.content
+    assert b"Customer console" in response.content
+    assert b"Open Django admin" not in response.content
+    assert b"Back to landing" not in response.content
 
 
 @pytest.mark.parametrize(

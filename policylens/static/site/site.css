@@ -71,10 +71,14 @@ p {
 }
 
 .brand-link {
-  color: #0f2238;
+  color: #b42318;
   text-decoration: none;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.2px;
+}
+
+.brand-link:hover {
+  color: #8f2419;
 }
 
 .brand-sub {

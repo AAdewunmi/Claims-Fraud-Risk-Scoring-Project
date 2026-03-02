@@ -2,6 +2,14 @@
 
 {% block title %}Admin console | PolicyLens{% endblock %}
 
+{% block header_nav %}
+  <nav class="nav" aria-label="Admin console navigation">
+    <a class="nav-link" href="{{ django_admin_url }}">Django admin</a>
+    <a class="nav-link" href="{{ reviewer_console_url }}">Review console</a>
+    <a class="nav-link" href="{{ customer_console_url }}">Customer console</a>
+  </nav>
+{% endblock %}
+
 {% block content %}
   <section class="card">
     <h1>Admin console</h1>
@@ -10,13 +18,6 @@
       build, with role-safe access and core navigation already in place.
     </p>
     <p class="muted"><strong>Signed in as:</strong> {{ request.user.username }}</p>
-
-    <div class="button-row">
-      <a class="button" href="{{ django_admin_url }}">Open Django admin</a>
-      <a class="button button-secondary" href="{{ reviewer_console_url }}">Reviewer console</a>
-      <a class="button button-secondary" href="{{ customer_console_url }}">Customer console</a>
-      <a class="button button-secondary" href="/">Back to landing</a>
-    </div>
   </section>
 
   <section class="card">
