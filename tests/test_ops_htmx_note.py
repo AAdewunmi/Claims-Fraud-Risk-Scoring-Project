@@ -440,3 +440,38 @@ def test_admin_user_has_read_only_access_for_reviewer_htmx_actions(client):
     assert claim.decisions.count() == 0
     assert claim.documents.count() == 0
     assert not hasattr(claim, "ml_score")
+
+
+@pytest.mark.django_db
+def test_multi_role_user_logged_via_admin_entry_is_read_only_for_reviewer_htmx_actions(client):
+    """Admin surface intent should force read-only even for users with reviewer group membership."""
+    reviewer_group, _ = Group.objects.get_or_create(name="reviewer")
+    admin_group, _ = Group.objects.get_or_create(name="admin")
+    user = User.objects.create_user(username="ops_multi_role_admin", password="password123")
+    user.groups.add(reviewer_group, admin_group)
+
+    login = client.post(
+        "/login/admin/",
+        data={"username": user.username, "password": "password123"},
+        follow=False,
+    )
+    assert login.status_code == 302
+
+    policy = PolicyFactory()
+    claim = Claim.objects.create(
+        policy=policy,
+        claim_type=Claim.Type.CLAIM,
+        priority=Claim.Priority.NORMAL,
+        summary="Read-only intent enforcement",
+        created_by="seed",
+        status=Claim.Status.NEW,
+    )
+
+    note_resp = client.post(
+        reverse("ops:htmx-add-note", kwargs={"claim_id": claim.id}),
+        data={"body": "Should not persist"},
+        HTTP_HX_REQUEST="true",
+    )
+    assert note_resp.status_code == 403
+    claim.refresh_from_db()
+    assert claim.notes.count() == 0

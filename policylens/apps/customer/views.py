@@ -30,6 +30,9 @@ from policylens.apps.core.authz import (
 )
 from policylens.apps.core.pagination import paginate_request_queryset
 
+SURFACE_INTENT_SESSION_KEY = "policylens_surface_intent"
+SURFACE_ADMIN = "admin"
+
 
 @dataclass(frozen=True)
 class DocumentModelSpec:
@@ -117,6 +120,22 @@ def _apply_stable_ordering(qs: Any) -> Any:
         fields.append("id")
 
     return qs.order_by(*fields) if fields else qs
+
+
+def _customer_write_enabled(request: HttpRequest) -> bool:
+    """
+    Return True when customer write actions are enabled for this request.
+
+    Admin login intent (`/login/admin/`) always forces read-only mode on customer
+    surfaces, even if the user also has customer privileges.
+    """
+    session = getattr(request, "session", None)
+    surface_intent = session.get(SURFACE_INTENT_SESSION_KEY) if session is not None else None
+    if user_is_admin(request.user):
+        if surface_intent == SURFACE_ADMIN:
+            return False
+        return user_has_customer_write_access(request.user)
+    return True
 
 
 def _get_owned_claim_or_404(user: Any, claim_id: int) -> Claim:
@@ -229,7 +248,7 @@ def customer_claim_list(request: HttpRequest) -> HttpResponse:
     """
     if not user_is_customer(request.user):
         return render(request, "site/forbidden.html", status=403)
-    read_only = user_is_admin(request.user) and not user_has_customer_write_access(request.user)
+    read_only = not _customer_write_enabled(request)
 
     qs = _owned_claims_queryset_for_user(request.user)
     qs = _apply_stable_ordering(qs)
@@ -262,7 +281,7 @@ def customer_claim_detail(request: HttpRequest, claim_id: int) -> HttpResponse:
     """
     if not user_is_customer(request.user):
         return render(request, "site/forbidden.html", status=403)
-    read_only = user_is_admin(request.user) and not user_has_customer_write_access(request.user)
+    read_only = not _customer_write_enabled(request)
 
     claim = _get_owned_claim_or_404(request.user, claim_id)
 
@@ -298,7 +317,7 @@ def customer_document_upload(request: HttpRequest, claim_id: int) -> HttpRespons
     """
     if not user_is_customer(request.user):
         return render(request, "site/forbidden.html", status=403)
-    if user_is_admin(request.user) and not user_has_customer_write_access(request.user):
+    if not _customer_write_enabled(request):
         return render(request, "site/forbidden.html", status=403)
 
     claim = _get_owned_claim_or_404(request.user, claim_id)

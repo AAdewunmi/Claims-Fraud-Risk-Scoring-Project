@@ -20,10 +20,29 @@ from policylens.apps.claims.models import Claim, ReviewDecision
 from policylens.apps.core.authz import user_has_reviewer_write_access, user_is_admin
 from policylens.apps.ops.forms import AddNoteForm, DecisionForm
 
+SURFACE_INTENT_SESSION_KEY = "policylens_surface_intent"
+SURFACE_ADMIN = "admin"
+
 
 def _actor(request: HttpRequest) -> str:
     """Return actor id for audit events."""
     return request.user.get_username() or str(request.user.pk)
+
+
+def _reviewer_write_enabled(request: HttpRequest) -> bool:
+    """
+    Return True when reviewer write actions are enabled for this request.
+
+    Admin login intent (`/login/admin/`) always forces read-only mode on reviewer
+    surfaces, even if the user also has reviewer privileges.
+    """
+    session = getattr(request, "session", None)
+    surface_intent = session.get(SURFACE_INTENT_SESSION_KEY) if session is not None else None
+    if user_is_admin(request.user):
+        if surface_intent == SURFACE_ADMIN:
+            return False
+        return user_has_reviewer_write_access(request.user)
+    return True
 
 
 @login_required
@@ -31,7 +50,7 @@ def htmx_add_note(request: HttpRequest, claim_id: int) -> HttpResponse:
     """Add a note and return refreshed notes partial."""
     claim = get_object_or_404(Claim, pk=claim_id)
     form = AddNoteForm(request.POST or None)
-    read_only = user_is_admin(request.user) and not user_has_reviewer_write_access(request.user)
+    read_only = not _reviewer_write_enabled(request)
     error = None
 
     if request.method == "POST" and read_only:
@@ -55,7 +74,7 @@ def htmx_score_claim(request: HttpRequest, claim_id: int) -> HttpResponse:
     """Score claim and return refreshed ML card partial."""
     claim = get_object_or_404(Claim, pk=claim_id)
     error = None
-    read_only = user_is_admin(request.user) and not user_has_reviewer_write_access(request.user)
+    read_only = not _reviewer_write_enabled(request)
     if request.method == "POST" and read_only:
         error = "Read-only view. Admin users cannot score claims from reviewer console."
     elif request.method == "POST":
@@ -80,7 +99,7 @@ def htmx_upload_document(request: HttpRequest, claim_id: int) -> HttpResponse:
     """Upload a document and return refreshed documents partial."""
     claim = get_object_or_404(Claim, pk=claim_id)
     error = None
-    read_only = user_is_admin(request.user) and not user_has_reviewer_write_access(request.user)
+    read_only = not _reviewer_write_enabled(request)
 
     if request.method == "POST" and read_only:
         error = "Read-only view. Admin users cannot upload documents from reviewer console."
@@ -123,7 +142,7 @@ def htmx_add_decision(request: HttpRequest, claim_id: int) -> HttpResponse:
     """Record a decision and return refreshed decisions partial."""
     claim = get_object_or_404(Claim, pk=claim_id)
     form = DecisionForm(request.POST or None)
-    read_only = user_is_admin(request.user) and not user_has_reviewer_write_access(request.user)
+    read_only = not _reviewer_write_enabled(request)
     error = None
 
     if request.method == "POST" and read_only:

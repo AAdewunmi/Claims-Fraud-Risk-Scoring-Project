@@ -147,6 +147,36 @@ def test_admin_sees_read_only_mode_on_reviewer_and_customer_surfaces(
     assert b"Read-only" in response.content
 
 
+@pytest.mark.parametrize("console_path", ["/console/reviewer/", "/console/customer/"])
+def test_admin_without_surface_intent_still_gets_read_only_surfaces(client, users, console_path):
+    """
+    Regression guard for admin sessions that were not created via `/login/admin/`.
+    """
+    client.force_login(users["admin"])
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert b"Read-only" in response.content
+
+
+@pytest.mark.parametrize("console_path", ["/console/reviewer/", "/console/customer/"])
+def test_multi_role_user_logged_via_admin_entry_gets_read_only_surfaces(
+    client, groups, user_password, console_path
+):
+    User = get_user_model()
+    user = User.objects.create_user(username="multi_role_admin", password=user_password)
+    user.groups.add(groups["admin"], groups["reviewer"], groups["customer"])
+
+    login = client.post(
+        "/login/admin/", data={"username": user.username, "password": user_password}, follow=False
+    )
+    assert login.status_code == 302
+    assert login["Location"] == "/console/admin/"
+
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert b"Read-only" in response.content
+
+
 @pytest.mark.parametrize(
     "role, console_path, heading",
     [
