@@ -10,6 +10,12 @@
       Prioritized by SLA and priority to support triage, scoring, and adjudication workflows.
     </p>
     <p class="muted"><strong>Signed in as:</strong> {{ request.user.username }}</p>
+    <div class="button-row">
+      <form method="post" action="{% url 'accounts:logout_to_landing' %}">
+        {% csrf_token %}
+        <button class="button button-secondary" type="submit">Back to landing</button>
+      </form>
+    </div>
   </section>
 
   <section class="card">

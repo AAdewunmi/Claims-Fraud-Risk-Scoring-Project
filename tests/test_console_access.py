@@ -11,6 +11,7 @@ Proof targets:
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.urls import reverse
 
 pytestmark = pytest.mark.django_db
 
@@ -170,6 +171,24 @@ def test_console_surfaces_show_authenticated_username(
     assert response.status_code == 200
     assert b"signed in as:" in response.content.lower()
     assert users[role].username.encode() in response.content
+
+
+def test_reviewer_back_to_landing_logs_out_and_redirects_home(client, users, user_password):
+    client.post(
+        "/login/reviewer/", data={"username": users["reviewer"].username, "password": user_password}
+    )
+
+    queue_response = client.get("/console/reviewer/")
+    assert queue_response.status_code == 200
+    assert b"Back to landing" in queue_response.content
+
+    logout_response = client.post(reverse("accounts:logout_to_landing"), follow=False)
+    assert logout_response.status_code == 302
+    assert logout_response["Location"] == reverse("public:landing")
+
+    reviewer_console_after_logout = client.get("/console/reviewer/", follow=False)
+    assert reviewer_console_after_logout.status_code == 302
+    assert reviewer_console_after_logout["Location"] == "/login/reviewer/?next=/console/reviewer/"
 
 
 @pytest.mark.parametrize(

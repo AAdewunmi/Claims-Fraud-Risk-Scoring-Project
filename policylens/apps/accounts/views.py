@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect, render
@@ -217,3 +217,10 @@ def forbidden_view(request: HttpRequest, exception: Exception | None = None) -> 
     """
     del exception
     return render(request, "site/forbidden.html", status=403)
+
+
+@require_http_methods(["POST"])
+def logout_to_landing(request: HttpRequest) -> HttpResponse:
+    """Log out the current user and return to the public landing page."""
+    logout(request)
+    return redirect("public:landing")
