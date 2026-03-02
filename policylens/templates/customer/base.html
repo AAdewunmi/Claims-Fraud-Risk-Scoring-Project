@@ -8,6 +8,7 @@
     <p class="muted">
       This surface is scoped to customer ownership. Claims and uploads are constrained to what the authenticated customer owns.
     </p>
+    <p class="muted"><strong>Signed in as:</strong> {{ request.user.username }}</p>
 
     <div class="button-row">
       <a class="button" href="/customer/">My claims</a>

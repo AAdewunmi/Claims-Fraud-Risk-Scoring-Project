@@ -153,6 +153,26 @@ def test_role_console_renders_for_correct_role(
 
 
 @pytest.mark.parametrize(
+    "role, console_path",
+    [
+        ("admin", "/console/admin/"),
+        ("reviewer", "/console/reviewer/"),
+        ("customer", "/console/customer/"),
+    ],
+)
+def test_console_surfaces_show_authenticated_username(
+    client, users, user_password, role, console_path
+):
+    client.post(
+        f"/login/{role}/", data={"username": users[role].username, "password": user_password}
+    )
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert b"signed in as:" in response.content.lower()
+    assert users[role].username.encode() in response.content
+
+
+@pytest.mark.parametrize(
     "login_path, expected_console_path",
     [
         ("/login/admin/", "/console/admin/"),
