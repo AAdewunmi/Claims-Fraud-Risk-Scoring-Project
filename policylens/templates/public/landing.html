@@ -2,6 +2,14 @@
 
 {% block title %}PolicyLens{% endblock %}
 
+{% block header_nav %}
+  <nav class="nav" aria-label="Role login navigation">
+    <a class="nav-link" href="/login/admin/">Admin</a>
+    <a class="nav-link" href="/login/reviewer/">Reviewer</a>
+    <a class="nav-link" href="/login/customer/">Customer</a>
+  </nav>
+{% endblock %}
+
 {% block content %}
   <section class="landing-hero">
     <div class="hero-copy">
@@ -11,12 +19,6 @@
         Accelerate claim resolution with role-specific workspaces, guided lifecycle execution, and auditable decisions
         from intake to closure.
       </p>
-
-      <div class="button-row">
-        <a class="button" href="/login/admin/">Admin</a>
-        <a class="button" href="/login/reviewer/">Reviewer</a>
-        <a class="button button-secondary" href="/login/customer/">Customer</a>
-      </div>
 
       <ul class="trust-points">
         <li>Role-aware entry and routing</li>
