@@ -7,6 +7,10 @@
     <a class="nav-link" href="{{ django_admin_url }}">Django admin</a>
     <a class="nav-link" href="{{ reviewer_console_url }}">Review console</a>
     <a class="nav-link" href="{{ customer_console_url }}">Customer console</a>
+    <form class="nav-inline-form" method="post" action="{% url 'accounts:logout_to_landing' %}">
+      {% csrf_token %}
+      <button class="nav-link nav-link-button" type="submit">Admin logout</button>
+    </form>
   </nav>
 {% endblock %}
 
