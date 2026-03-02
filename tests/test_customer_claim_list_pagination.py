@@ -74,7 +74,9 @@ def test_customer_list_is_limited_to_one_claim(client, customer_user, customer_c
     assert len(items) == 1
 
     expected_primary = (
-        Claim.objects.filter(created_by=customer_user.username).order_by("-created_at", "id").first()
+        Claim.objects.filter(created_by=customer_user.username)
+        .order_by("-created_at", "id")
+        .first()
     )
     assert expected_primary is not None
     assert items[0].id == expected_primary.id

@@ -16,7 +16,7 @@ urlpatterns = [
     path("", include("policylens.apps.accounts.urls")),
     # Role consoles
     path("", include("policylens.apps.console.urls")),
-    # Customer portal
+    # Customer console
     path("", include("policylens.apps.customer.urls")),
     # API and operational surfaces
     path("api/", include("policylens.apps.api.urls")),

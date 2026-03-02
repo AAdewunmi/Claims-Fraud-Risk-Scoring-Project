@@ -1,5 +1,5 @@
 """
-Tests for customer portal views and helper logic.
+Tests for customer console views and helper logic.
 
 These tests focus on branch coverage for ownership resolution and upload flow.
 """

@@ -1,5 +1,5 @@
 """
-URL routes for the customer portal.
+URL routes for the customer console.
 
 Routes are scoped under /customer and require authenticated customer access.
 """

@@ -1,5 +1,5 @@
 """
-DB-hitting tests for customer portal access and ownership scoping.
+DB-hitting tests for customer console access and ownership scoping.
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ def _make_claim_for_policy(policy: Policy, *, idx: int, created_by: str) -> Clai
     )
 
 
-def test_customer_portal_requires_customer_role(client, users):
+def test_customer_console_requires_customer_role(client, users):
     client.force_login(users["reviewer"])
     r = client.get("/customer/")
     assert r.status_code == 403

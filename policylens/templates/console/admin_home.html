@@ -18,17 +18,17 @@
   <section class="card">
     <h1>Admin console</h1>
     <p class="muted">
-      This is the operational foothold for PolicyLens administrators. A production-grade admin workspace is in active
-      build, with role-safe access and core navigation already in place.
+      This is the operational control plane for PolicyLens administrators with governed access and system-wide
+      navigation.
     </p>
     <p class="muted"><strong>Signed in as:</strong> {{ request.user.username }}</p>
   </section>
 
   <section class="card">
-    <h2>Build status</h2>
+    <h2>Operations status</h2>
     <p>
-      Current delivery is focused on moving critical operations out of Django admin into hardened product-native
-      controls for configuration, user lifecycle management, audit visibility, and system governance.
+      Administrative operations are available for configuration management, user lifecycle governance, audit oversight,
+      and secure access control.
     </p>
   </section>
 {% endblock %}

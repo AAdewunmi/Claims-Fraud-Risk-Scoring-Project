@@ -181,7 +181,7 @@ class Command(BaseCommand):
         """
         Count customer-owned claims for the given demo customer user.
 
-        Customer portal ownership currently resolves by `created_by == username` first,
+        Customer console ownership currently resolves by `created_by == username` first,
         so this count uses the same contract.
         """
         return Claim.objects.filter(created_by=customer_user.username).count()

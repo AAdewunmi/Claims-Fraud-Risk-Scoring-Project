@@ -1,5 +1,5 @@
 """
-Customer portal views for PolicyLens.
+Customer console views for PolicyLens.
 
 Week 6 Day 4 contract
 - Customer claim list is paginated at 15 per page.
@@ -267,7 +267,7 @@ def _spec_from_model(model: Any) -> DocumentModelSpec | None:
 @require_GET
 def customer_claim_list(request: HttpRequest) -> HttpResponse:
     """
-    Customer portal claim list.
+    Customer console claim list.
 
     Access
     - Requires customer or admin role.
@@ -306,7 +306,7 @@ def customer_claim_list(request: HttpRequest) -> HttpResponse:
 @require_GET
 def customer_claim_detail(request: HttpRequest, claim_id: int) -> HttpResponse:
     """
-    Customer portal claim detail.
+    Customer console claim detail.
 
     Access
     - Requires customer or admin role.
