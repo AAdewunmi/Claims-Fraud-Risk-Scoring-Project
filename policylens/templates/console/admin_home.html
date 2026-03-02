@@ -2,27 +2,33 @@
 
 {% block title %}Admin console | PolicyLens{% endblock %}
 
+{% block header_nav %}
+  <nav class="nav" aria-label="Admin console navigation">
+    <a class="nav-link" href="{{ django_admin_url }}">Django admin</a>
+    <a class="nav-link" href="{{ reviewer_console_url }}">Review console</a>
+    <a class="nav-link" href="{{ customer_console_url }}">Customer console</a>
+    <form class="nav-inline-form" method="post" action="{% url 'accounts:logout_to_landing' %}">
+      {% csrf_token %}
+      <button class="nav-link nav-link-button" type="submit">Admin logout</button>
+    </form>
+  </nav>
+{% endblock %}
+
 {% block content %}
   <section class="card">
     <h1>Admin console</h1>
     <p class="muted">
-      This is the operational foothold for PolicyLens administrators. A production-grade admin workspace is in active
-      build, with role-safe access and core navigation already in place.
+      This is the operational control plane for PolicyLens administrators with governed access and system-wide
+      navigation.
     </p>
-
-    <div class="button-row">
-      <a class="button" href="{{ django_admin_url }}">Open Django admin</a>
-      <a class="button button-secondary" href="{{ reviewer_console_url }}">Reviewer console</a>
-      <a class="button button-secondary" href="{{ customer_console_url }}">Customer console</a>
-      <a class="button button-secondary" href="/">Back to landing</a>
-    </div>
+    <p class="muted"><strong>Signed in as:</strong> {{ request.user.username }}</p>
   </section>
 
   <section class="card">
-    <h2>Build status</h2>
+    <h2>Operations status</h2>
     <p>
-      Current delivery is focused on moving critical operations out of Django admin into hardened product-native
-      controls for configuration, user lifecycle management, audit visibility, and system governance.
+      Administrative operations are available for configuration management, user lifecycle governance, audit oversight,
+      and secure access control.
     </p>
   </section>
 {% endblock %}

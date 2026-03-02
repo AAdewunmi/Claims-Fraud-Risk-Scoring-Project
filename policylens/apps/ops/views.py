@@ -27,9 +27,16 @@ from policylens.apps.claims.models import (
     InternalNote,
     ReviewDecision,
 )
-from policylens.apps.core.authz import user_is_reviewer
+from policylens.apps.core.authz import (
+    user_has_reviewer_write_access,
+    user_is_admin,
+    user_is_reviewer,
+)
 from policylens.apps.core.pagination import paginate_request_queryset
 from policylens.apps.ops.forms import AddNoteForm, DecisionForm
+
+SURFACE_INTENT_SESSION_KEY = "policylens_surface_intent"
+SURFACE_ADMIN = "admin"
 
 
 @login_required
@@ -105,6 +112,23 @@ def _apply_stable_ordering(qs: Any) -> Any:
     return qs.order_by(*order_fields) if order_fields else qs
 
 
+def _reviewer_write_enabled(request: HttpRequest) -> bool:
+    """
+    Return True when reviewer write actions are enabled for this request.
+
+    Admin login intent (`/login/admin/`) always forces read-only mode on reviewer
+    surfaces, even if the user also has reviewer privileges.
+    """
+    if not user_has_reviewer_write_access(request.user):
+        return False
+
+    session = getattr(request, "session", None)
+    surface_intent = session.get(SURFACE_INTENT_SESSION_KEY) if session is not None else None
+    if surface_intent == SURFACE_ADMIN and user_is_admin(request.user):
+        return False
+    return True
+
+
 @login_required
 @require_GET
 def ops_queue(request: HttpRequest) -> HttpResponse:
@@ -140,6 +164,7 @@ def ops_queue(request: HttpRequest) -> HttpResponse:
         "ops/queue.html",
         {
             "page_title": "Review queue",
+            "read_only": not _reviewer_write_enabled(request),
             "pagination": pagination,
             "claims": pagination.page_obj.object_list,
             "items": pagination.page_obj.object_list,
@@ -160,6 +185,9 @@ queue_view = ops_queue
 @login_required
 def claim_detail_view(request: HttpRequest, claim_id: int) -> HttpResponse:
     """Render claim detail page with timeline sections."""
+    if not user_is_reviewer(request.user):
+        return render(request, "site/forbidden.html", status=403)
+
     claim = get_object_or_404(
         Claim.objects.select_related(
             "policy", "policy__holder", "sla_clock", "ml_score"
@@ -180,5 +208,6 @@ def claim_detail_view(request: HttpRequest, claim_id: int) -> HttpResponse:
             "claim": claim,
             "note_form": AddNoteForm(),
             "decision_form": DecisionForm(),
+            "read_only": not _reviewer_write_enabled(request),
         },
     )

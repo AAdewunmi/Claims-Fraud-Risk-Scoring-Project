@@ -75,3 +75,35 @@ def user_is_customer(user: object) -> bool:
     if getattr(user, "is_superuser", False):
         return True
     return user_in_any_group(user, [GROUP_CUSTOMER, GROUP_ADMIN])
+
+
+def user_has_reviewer_write_access(user: object) -> bool:
+    """
+    Return True if the user may perform reviewer write actions.
+
+    Rules:
+    - Superusers always allowed.
+    - Members of 'reviewer' group allowed.
+    - Admin-only users are read-only on reviewer surfaces.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+    return user_in_any_group(user, [GROUP_REVIEWER])
+
+
+def user_has_customer_write_access(user: object) -> bool:
+    """
+    Return True if the user may perform customer write actions.
+
+    Rules:
+    - Superusers always allowed.
+    - Members of 'customer' group allowed.
+    - Admin-only users are read-only on customer surfaces.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+    return user_in_any_group(user, [GROUP_CUSTOMER])

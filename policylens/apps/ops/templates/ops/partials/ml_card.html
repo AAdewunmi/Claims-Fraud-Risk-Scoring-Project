@@ -44,7 +44,9 @@
       <div class="text-muted">No score recorded yet.</div>
     {% endif %}
 
-    {% if not claim.ml_score %}
+    {% if read_only %}
+      <div class="text-muted mt-3">Read-only mode: scoring actions are disabled for admin view.</div>
+    {% elif not claim.ml_score %}
       <form
         class="mt-3"
         hx-post="{% url 'ops:htmx-score-claim' claim_id=claim.id %}"

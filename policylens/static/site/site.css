@@ -71,10 +71,15 @@ p {
 }
 
 .brand-link {
-  color: #0f2238;
+  color: #b42318;
   text-decoration: none;
-  font-weight: 800;
+  font-weight: 900;
+  font-size: 20px;
   letter-spacing: 0.2px;
+}
+
+.brand-link:hover {
+  color: #8f2419;
 }
 
 .brand-sub {
@@ -97,6 +102,18 @@ p {
 
 .nav-link:hover {
   background: rgba(15, 91, 157, 0.1);
+}
+
+.nav-inline-form {
+  margin: 0;
+}
+
+.nav-link-button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
 }
 
 main.container {
@@ -144,6 +161,12 @@ main.container {
   background: var(--button-alt);
   color: var(--button-alt-text);
   border-color: rgba(19, 38, 60, 0.16);
+}
+
+button.button {
+  font-family: "Source Sans 3", "Avenir Next", "Helvetica Neue", sans-serif;
+  font-size: 1rem;
+  line-height: 1.55;
 }
 
 .form {
@@ -218,6 +241,12 @@ main.container {
   margin-top: 8px;
   margin-bottom: 14px;
   font-size: clamp(2rem, 4vw, 3.3rem);
+}
+
+.landing-title-brand {
+  color: #b42318;
+  font-size: 20px;
+  font-weight: 900;
 }
 
 .lead {

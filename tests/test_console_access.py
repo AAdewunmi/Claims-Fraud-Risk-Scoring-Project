@@ -4,13 +4,14 @@ DB-hitting tests for console access behaviour.
 Proof targets:
 - anonymous console access redirects to the correct surface login entry point, with `next`
 - authenticated wrong-role access returns 403 with the shared forbidden template
-- allowed role access returns 200 and renders the expected console headings
+- allowed role access returns 200 and renders the expected dashboard headings
 - post-login redirect is deterministic by entry point
 """
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.urls import reverse
 
 pytestmark = pytest.mark.django_db
 
@@ -114,13 +115,86 @@ def test_admin_console_renders_and_links_to_django_admin_and_other_consoles(
     assert b"/admin/" in response.content
     assert b"/console/reviewer/" in response.content
     assert b"/console/customer/" in response.content
+    assert b"Django admin" in response.content
+    assert b"Review console" in response.content
+    assert b"Customer console" in response.content
+    assert b"Admin logout" in response.content
+    assert b'action="/logout/"' in response.content
+    assert b"Open Django admin" not in response.content
+    assert b"Back to landing" not in response.content
+
+
+@pytest.mark.parametrize(
+    "console_path, expected_heading",
+    [
+        ("/console/reviewer/", b"Reviewer queue"),
+        ("/console/customer/", b"My claims"),
+    ],
+)
+def test_admin_can_open_reviewer_and_customer_dashboards(
+    client, users, user_password, console_path, expected_heading
+):
+    client.post(
+        "/login/admin/", data={"username": users["admin"].username, "password": user_password}
+    )
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert expected_heading in response.content
+
+
+@pytest.mark.parametrize("console_path", ["/console/reviewer/", "/console/customer/"])
+def test_admin_sees_read_only_mode_on_reviewer_and_customer_surfaces(
+    client, users, user_password, console_path
+):
+    client.post(
+        "/login/admin/", data={"username": users["admin"].username, "password": user_password}
+    )
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert b"Read-only" in response.content
+    assert b"Back to admin console" in response.content
+    assert b"/console/admin/" in response.content
+
+
+@pytest.mark.parametrize("console_path", ["/console/reviewer/", "/console/customer/"])
+def test_admin_without_surface_intent_still_gets_read_only_surfaces(client, users, console_path):
+    """
+    Regression guard for admin sessions that were not created via `/login/admin/`.
+    """
+    client.force_login(users["admin"])
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert b"Read-only" in response.content
+    assert b"Back to admin console" in response.content
+    assert b"/console/admin/" in response.content
+
+
+@pytest.mark.parametrize("console_path", ["/console/reviewer/", "/console/customer/"])
+def test_multi_role_user_logged_via_admin_entry_gets_read_only_surfaces(
+    client, groups, user_password, console_path
+):
+    User = get_user_model()
+    user = User.objects.create_user(username="multi_role_admin", password=user_password)
+    user.groups.add(groups["admin"], groups["reviewer"], groups["customer"])
+
+    login = client.post(
+        "/login/admin/", data={"username": user.username, "password": user_password}, follow=False
+    )
+    assert login.status_code == 302
+    assert login["Location"] == "/console/admin/"
+
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert b"Read-only" in response.content
+    assert b"Back to admin console" in response.content
+    assert b"/console/admin/" in response.content
 
 
 @pytest.mark.parametrize(
     "role, console_path, heading",
     [
-        ("reviewer", "/console/reviewer/", b"Reviewer console"),
-        ("customer", "/console/customer/", b"Customer console"),
+        ("reviewer", "/console/reviewer/", b"Reviewer queue"),
+        ("customer", "/console/customer/", b"My claims"),
     ],
 )
 def test_role_console_renders_for_correct_role(
@@ -132,6 +206,47 @@ def test_role_console_renders_for_correct_role(
     response = client.get(console_path)
     assert response.status_code == 200
     assert heading in response.content
+    if role == "customer":
+        assert b"Customer logout" in response.content
+        assert b"Back to landing" not in response.content
+
+
+@pytest.mark.parametrize(
+    "role, console_path",
+    [
+        ("admin", "/console/admin/"),
+        ("reviewer", "/console/reviewer/"),
+        ("customer", "/console/customer/"),
+    ],
+)
+def test_console_surfaces_show_authenticated_username(
+    client, users, user_password, role, console_path
+):
+    client.post(
+        f"/login/{role}/", data={"username": users[role].username, "password": user_password}
+    )
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert b"signed in as:" in response.content.lower()
+    assert users[role].username.encode() in response.content
+
+
+def test_reviewer_logout_logs_out_and_redirects_home(client, users, user_password):
+    client.post(
+        "/login/reviewer/", data={"username": users["reviewer"].username, "password": user_password}
+    )
+
+    queue_response = client.get("/console/reviewer/")
+    assert queue_response.status_code == 200
+    assert b"Reviewer logout" in queue_response.content
+
+    logout_response = client.post(reverse("accounts:logout_to_landing"), follow=False)
+    assert logout_response.status_code == 302
+    assert logout_response["Location"] == reverse("public:landing")
+
+    reviewer_console_after_logout = client.get("/console/reviewer/", follow=False)
+    assert reviewer_console_after_logout.status_code == 302
+    assert reviewer_console_after_logout["Location"] == "/login/reviewer/?next=/console/reviewer/"
 
 
 @pytest.mark.parametrize(

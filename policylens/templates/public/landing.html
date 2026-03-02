@@ -2,21 +2,23 @@
 
 {% block title %}PolicyLens{% endblock %}
 
+{% block header_nav %}
+  <nav class="nav" aria-label="Role login navigation">
+    <a class="nav-link" href="/login/admin/">Admin</a>
+    <a class="nav-link" href="/login/reviewer/">Reviewer</a>
+    <a class="nav-link" href="/login/customer/">Customer</a>
+  </nav>
+{% endblock %}
+
 {% block content %}
   <section class="landing-hero">
     <div class="hero-copy">
       <p class="eyebrow">Claims management platform</p>
-      <h1>PolicyLens: Insurance Claims Fraud Risk Scoring System</h1>
+      <h1><span class="landing-title-brand">PolicyLens</span>: Insurance Claims Fraud Risk Scoring System</h1>
       <p class="lead">
         Accelerate claim resolution with role-specific workspaces, guided lifecycle execution, and auditable decisions
         from intake to closure.
       </p>
-
-      <div class="button-row">
-        <a class="button" href="/login/admin/">Admin</a>
-        <a class="button" href="/login/reviewer/">Reviewer</a>
-        <a class="button button-secondary" href="/login/customer/">Customer</a>
-      </div>
 
       <ul class="trust-points">
         <li>Role-aware entry and routing</li>
@@ -25,24 +27,24 @@
       </ul>
     </div>
 
-    <aside class="hero-panel" aria-label="Operational performance indicators">
-      <h2>Operational snapshot</h2>
+    <aside class="hero-panel" aria-label="Platform capability highlights">
+      <h2>Platform highlights</h2>
       <div class="metric-grid">
         <article>
-          <span class="metric-value">2.4x</span>
-          <span class="metric-label">faster triage throughput</span>
+          <span class="metric-value">RBAC</span>
+          <span class="metric-label">role-based access control</span>
         </article>
         <article>
-          <span class="metric-value">99.2%</span>
-          <span class="metric-label">decision trail completeness</span>
+          <span class="metric-value">Audit</span>
+          <span class="metric-label">end-to-end decision traceability</span>
         </article>
         <article>
-          <span class="metric-value">18%</span>
-          <span class="metric-label">lower rework volume</span>
+          <span class="metric-value">Health</span>
+          <span class="metric-label">readiness and dependency monitoring</span>
         </article>
         <article>
-          <span class="metric-value">&lt;5m</span>
-          <span class="metric-label">assignment SLA for priority claims</span>
+          <span class="metric-value">SLA</span>
+          <span class="metric-label">deterministic queue and prioritization controls</span>
         </article>
       </div>
     </aside>

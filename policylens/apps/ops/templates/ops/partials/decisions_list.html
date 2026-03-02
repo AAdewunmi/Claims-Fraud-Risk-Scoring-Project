@@ -17,30 +17,34 @@
     </div>
   {% endif %}
 
-  <form
-    hx-post="{% url 'ops:htmx-add-decision' claim_id=claim.id %}"
-    hx-target="#decisions-panel"
-    hx-swap="outerHTML"
-    class="mb-3"
-    method="post"
-  >
-    {% csrf_token %}
-    <div class="row g-2">
-      <div class="col-12 col-md-4">
-        <select name="decision" class="form-select" required>
-          {% for value,label in form.fields.decision.choices %}
-            <option value="{{ value }}" {% if form.data.decision == value %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
+  {% if read_only %}
+    <div class="text-muted mb-3">Read-only mode: recording decisions is disabled for admin view.</div>
+  {% else %}
+    <form
+      hx-post="{% url 'ops:htmx-add-decision' claim_id=claim.id %}"
+      hx-target="#decisions-panel"
+      hx-swap="outerHTML"
+      class="mb-3"
+      method="post"
+    >
+      {% csrf_token %}
+      <div class="row g-2">
+        <div class="col-12 col-md-4">
+          <select name="decision" class="form-select" required>
+            {% for value,label in form.fields.decision.choices %}
+              <option value="{{ value }}" {% if form.data.decision == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-8">
+          <textarea name="notes" class="form-control" rows="2" placeholder="Decision notes (optional)">{{ form.data.notes|default:"" }}</textarea>
+        </div>
+        <div class="col-12 d-grid">
+          <button class="btn btn-primary btn-sm" type="submit">Record decision</button>
+        </div>
       </div>
-      <div class="col-12 col-md-8">
-        <textarea name="notes" class="form-control" rows="2" placeholder="Decision notes (optional)">{{ form.data.notes|default:"" }}</textarea>
-      </div>
-      <div class="col-12 d-grid">
-        <button class="btn btn-primary btn-sm" type="submit">Record decision</button>
-      </div>
-    </div>
-  </form>
+    </form>
+  {% endif %}
 
   {% if claim.decisions.all|length == 0 %}
     <div class="text-muted">No decisions recorded.</div>

@@ -1,19 +1,36 @@
 {% extends "site/base.html" %}
 
-{% block title %}Customer portal | PolicyLens{% endblock %}
+{% block title %}Customer console | PolicyLens{% endblock %}
+
+{% block header_nav %}
+  <nav class="nav" aria-label="Customer console navigation">
+    {% if read_only %}
+      <a class="nav-link" href="{% url 'console:admin_home' %}">Back to admin console</a>
+    {% endif %}
+    <form class="nav-inline-form" method="post" action="{% url 'accounts:logout_to_landing' %}">
+      {% csrf_token %}
+      <button class="nav-link nav-link-button" type="submit">Customer logout</button>
+    </form>
+  </nav>
+{% endblock %}
 
 {% block content %}
   <section class="card">
-    <h1>Customer portal</h1>
+    <h1>Customer console</h1>
     <p class="muted">
-      This surface is scoped to customer ownership. Claims and uploads are constrained to what the authenticated customer owns.
+      This console is scoped to customer ownership. Claims and uploads are constrained to what the authenticated
+      customer owns.
     </p>
+    <p class="muted"><strong>Signed in as:</strong> {{ request.user.username }}</p>
+    {% if read_only %}
+      <p class="muted"><strong>Mode:</strong> Read-only admin view</p>
+    {% endif %}
 
-    <div class="button-row">
-      <a class="button" href="/customer/">My claims</a>
-      <a class="button button-secondary" href="/console/customer/">Customer console</a>
-      <a class="button button-secondary" href="/">Back to landing</a>
-    </div>
+    {% if read_only %}
+      <div class="button-row">
+        <a class="button button-secondary" href="{% url 'console:admin_home' %}">Back to admin console</a>
+      </div>
+    {% endif %}
   </section>
 
   {% block customer_content %}{% endblock %}

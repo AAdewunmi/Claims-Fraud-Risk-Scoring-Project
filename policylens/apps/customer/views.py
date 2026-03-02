@@ -1,5 +1,5 @@
 """
-Customer portal views for PolicyLens.
+Customer console views for PolicyLens.
 
 Week 6 Day 4 contract
 - Customer claim list is paginated at 15 per page.
@@ -23,8 +23,15 @@ from django.views.decorators.http import require_GET, require_http_methods
 # Import Claim model.
 # If your repo structure differs, update this import to the canonical Claim model.
 from policylens.apps.claims.models import Claim  # type: ignore
-from policylens.apps.core.authz import user_is_customer
+from policylens.apps.core.authz import (
+    user_has_customer_write_access,
+    user_is_admin,
+    user_is_customer,
+)
 from policylens.apps.core.pagination import paginate_request_queryset
+
+SURFACE_INTENT_SESSION_KEY = "policylens_surface_intent"
+SURFACE_ADMIN = "admin"
 
 
 @dataclass(frozen=True)
@@ -115,6 +122,52 @@ def _apply_stable_ordering(qs: Any) -> Any:
     return qs.order_by(*fields) if fields else qs
 
 
+def _restrict_to_primary_claim(qs: Any) -> Any:
+    """
+    Enforce one-claim-per-customer visibility for customer surfaces.
+
+    We keep one deterministic "primary" claim (the first claim in the ordered
+    queryset) and hide additional owned claims from customer pages.
+    """
+    primary_claim_id = None
+
+    try:
+        primary_claim_id = qs.values_list("id", flat=True).first()
+    except Exception:
+        try:
+            first_claim = qs.first()
+            primary_claim_id = getattr(first_claim, "id", None)
+        except Exception:
+            primary_claim_id = None
+
+    if primary_claim_id is None:
+        try:
+            return qs.none()
+        except Exception:
+            return qs
+
+    try:
+        return qs.filter(pk=primary_claim_id)
+    except Exception:
+        return qs
+
+
+def _customer_write_enabled(request: HttpRequest) -> bool:
+    """
+    Return True when customer write actions are enabled for this request.
+
+    Admin login intent (`/login/admin/`) always forces read-only mode on customer
+    surfaces, even if the user also has customer privileges.
+    """
+    session = getattr(request, "session", None)
+    surface_intent = session.get(SURFACE_INTENT_SESSION_KEY) if session is not None else None
+    if user_is_admin(request.user):
+        if surface_intent == SURFACE_ADMIN:
+            return False
+        return user_has_customer_write_access(request.user)
+    return True
+
+
 def _get_owned_claim_or_404(user: Any, claim_id: int) -> Claim:
     """
     Fetch an owned claim or raise 404.
@@ -122,6 +175,8 @@ def _get_owned_claim_or_404(user: Any, claim_id: int) -> Claim:
     404 is used (not 403) to avoid leaking whether a claim id exists.
     """
     qs = _owned_claims_queryset_for_user(user)
+    qs = _apply_stable_ordering(qs)
+    qs = _restrict_to_primary_claim(qs)
     try:
         return qs.get(pk=claim_id)
     except Claim.DoesNotExist:
@@ -212,7 +267,7 @@ def _spec_from_model(model: Any) -> DocumentModelSpec | None:
 @require_GET
 def customer_claim_list(request: HttpRequest) -> HttpResponse:
     """
-    Customer portal claim list.
+    Customer console claim list.
 
     Access
     - Requires customer or admin role.
@@ -225,9 +280,11 @@ def customer_claim_list(request: HttpRequest) -> HttpResponse:
     """
     if not user_is_customer(request.user):
         return render(request, "site/forbidden.html", status=403)
+    read_only = not _customer_write_enabled(request)
 
     qs = _owned_claims_queryset_for_user(request.user)
     qs = _apply_stable_ordering(qs)
+    qs = _restrict_to_primary_claim(qs)
 
     pagination = paginate_request_queryset(
         request,
@@ -241,6 +298,7 @@ def customer_claim_list(request: HttpRequest) -> HttpResponse:
         {
             "pagination": pagination,
             "claims": pagination.page_obj.object_list,
+            "read_only": read_only,
         },
     )
 
@@ -248,7 +306,7 @@ def customer_claim_list(request: HttpRequest) -> HttpResponse:
 @require_GET
 def customer_claim_detail(request: HttpRequest, claim_id: int) -> HttpResponse:
     """
-    Customer portal claim detail.
+    Customer console claim detail.
 
     Access
     - Requires customer or admin role.
@@ -256,6 +314,7 @@ def customer_claim_detail(request: HttpRequest, claim_id: int) -> HttpResponse:
     """
     if not user_is_customer(request.user):
         return render(request, "site/forbidden.html", status=403)
+    read_only = not _customer_write_enabled(request)
 
     claim = _get_owned_claim_or_404(request.user, claim_id)
 
@@ -274,6 +333,7 @@ def customer_claim_detail(request: HttpRequest, claim_id: int) -> HttpResponse:
         {
             "claim": claim,
             "documents": documents,
+            "read_only": read_only,
         },
     )
 
@@ -289,6 +349,8 @@ def customer_document_upload(request: HttpRequest, claim_id: int) -> HttpRespons
     - Upload is rejected for non-owned claims via 404.
     """
     if not user_is_customer(request.user):
+        return render(request, "site/forbidden.html", status=403)
+    if not _customer_write_enabled(request):
         return render(request, "site/forbidden.html", status=403)
 
     claim = _get_owned_claim_or_404(request.user, claim_id)

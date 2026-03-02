@@ -154,7 +154,7 @@ def test_reviewer_console_allows_reviewer_group(
 
     console_response = client.get(console_url)
     assert console_response.status_code == 200
-    assert b"reviewer console" in console_response.content.lower()
+    assert b"reviewer queue" in console_response.content.lower()
 
 
 def test_reviewer_console_allows_admin_group(client, admin_user, user_password):
@@ -170,7 +170,7 @@ def test_reviewer_console_allows_admin_group(client, admin_user, user_password):
 
     console_response = client.get(console_url)
     assert console_response.status_code == 200
-    assert b"reviewer console" in console_response.content.lower()
+    assert b"reviewer queue" in console_response.content.lower()
 
 
 def test_user_has_reviewer_surface_access_denies_anonymous():

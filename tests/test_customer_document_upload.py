@@ -25,6 +25,7 @@ def roles():
     return {
         "customer": Group.objects.get_or_create(name="customer")[0],
         "reviewer": Group.objects.get_or_create(name="reviewer")[0],
+        "admin": Group.objects.get_or_create(name="admin")[0],
     }
 
 
@@ -53,7 +54,14 @@ def users(roles):
     )
     reviewer.groups.add(roles["reviewer"])
 
-    return {"c1": c1, "c2": c2, "reviewer": reviewer}
+    admin = User.objects.create_user(
+        username="admin_up",
+        email="admin_up@example.com",
+        password="pass-12345-strong",
+    )
+    admin.groups.add(roles["admin"])
+
+    return {"c1": c1, "c2": c2, "reviewer": reviewer, "admin": admin}
 
 
 def _policy_for(email: str) -> Policy:
@@ -117,3 +125,55 @@ def test_customer_cannot_upload_document_to_non_owned_claim(client, users):
 
     # 404 avoids leaking whether the claim exists to this user.
     assert r.status_code == 404
+
+
+def test_admin_customer_view_is_read_only_and_blocks_upload(client, users):
+    claim = _claim_for(
+        _policy_for("admin_up@example.com"),
+        idx=3,
+        created_by=users["admin"].username,
+    )
+    client.force_login(users["admin"])
+
+    detail = client.get(f"/customer/claims/{claim.id}/")
+    assert detail.status_code == 200
+    assert b"Read-only mode" in detail.content
+
+    upload = SimpleUploadedFile("evidence.txt", b"evidence-bytes", content_type="text/plain")
+    blocked = client.post(
+        f"/customer/claims/{claim.id}/documents/upload/",
+        data={"file": upload},
+        follow=False,
+    )
+    assert blocked.status_code == 403
+
+
+def test_multi_role_user_logged_via_admin_entry_is_read_only_on_customer_upload(client, roles):
+    User = get_user_model()
+    user = User.objects.create_user(
+        username="multi_role_customer_admin",
+        email="multi_role_customer_admin@example.com",
+        password="pass-12345-strong",
+    )
+    user.groups.add(roles["admin"], roles["customer"])
+
+    claim = _claim_for(
+        _policy_for("multi_role_customer_admin@example.com"),
+        idx=4,
+        created_by=user.username,
+    )
+
+    login = client.post(
+        "/login/admin/",
+        data={"username": user.username, "password": "pass-12345-strong"},
+        follow=False,
+    )
+    assert login.status_code == 302
+
+    upload = SimpleUploadedFile("evidence.txt", b"evidence-bytes", content_type="text/plain")
+    blocked = client.post(
+        f"/customer/claims/{claim.id}/documents/upload/",
+        data={"file": upload},
+        follow=False,
+    )
+    assert blocked.status_code == 403

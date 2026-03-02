@@ -1,5 +1,5 @@
 """
-Tests for customer portal views and helper logic.
+Tests for customer console views and helper logic.
 
 These tests focus on branch coverage for ownership resolution and upload flow.
 """
@@ -134,6 +134,40 @@ def test_apply_stable_ordering_no_model_returns_input():
 
     sentinel = NoModel()
     assert views._apply_stable_ordering(sentinel) is sentinel
+
+
+def test_restrict_to_primary_claim_falls_back_to_first_when_values_list_fails():
+    sentinel = object()
+
+    class FakeQS:
+        def values_list(self, *_args, **_kwargs):
+            raise RuntimeError("values_list unavailable")
+
+        def first(self):
+            return SimpleNamespace(id=17)
+
+        def filter(self, **kwargs):
+            assert kwargs == {"pk": 17}
+            return sentinel
+
+    assert views._restrict_to_primary_claim(FakeQS()) is sentinel
+
+
+def test_restrict_to_primary_claim_returns_original_qs_when_filter_raises():
+    class FakeValuesList:
+        @staticmethod
+        def first():
+            return 23
+
+    class FakeQS:
+        def values_list(self, *_args, **_kwargs):
+            return FakeValuesList()
+
+        def filter(self, **_kwargs):
+            raise RuntimeError("filter unavailable")
+
+    qs = FakeQS()
+    assert views._restrict_to_primary_claim(qs) is qs
 
 
 def test_get_owned_claim_or_404_success(monkeypatch: pytest.MonkeyPatch):

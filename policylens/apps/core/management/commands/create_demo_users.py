@@ -3,14 +3,14 @@ Create deterministic demo users and seed data for PolicyLens.
 
 Sprint 6 goals
 - Create demo admin, reviewer, and customer users.
-- Ensure there are enough claims to demonstrate pagination on:
-  - reviewer queue (/ops/queue/) with page size 15
-  - customer claim list (/customer/) with page size 15
+- Ensure reviewer queue has enough claims to demonstrate pagination.
+- Keep demo customer claims simple: one customer, one claim.
 
 Idempotency
 - The command can be run repeatedly.
 - Users are created if missing and their passwords are set on each run.
-- Claims are created only until the minimum counts are satisfied.
+- Reviewer claims are created only until the minimum count is satisfied.
+- Customer claims are normalized to exactly one claim for demo_customer.
 """
 
 from __future__ import annotations
@@ -49,10 +49,10 @@ class Command(BaseCommand):
 
     Seed data
     - At least 16 reviewer-queue-visible claims (not customer-owned)
-    - At least 16 customer-owned claims (owned by demo_customer)
+    - Exactly 1 customer-owned claim (owned by demo_customer)
     """
 
-    help = "Create PolicyLens demo users and seed claims to demonstrate pagination."
+    help = "Create PolicyLens demo users, reviewer queue claims, and a single demo customer claim."
 
     DEMO_PASSWORD = "pass-12345-strong"
 
@@ -60,7 +60,7 @@ class Command(BaseCommand):
     CUSTOMER_SEED_MARKER = "demo-customer-seed"
 
     MIN_REVIEWER_QUEUE_CLAIMS = 20
-    MIN_CUSTOMER_OWNED_CLAIMS = 20
+    TARGET_CUSTOMER_OWNED_CLAIMS = 1
 
     def handle(self, *args: Any, **options: Any) -> None:
         """
@@ -107,7 +107,9 @@ class Command(BaseCommand):
             )
 
             created_reviewer = self._ensure_reviewer_queue_claims(reviewer_policy)
-            created_customer = self._ensure_customer_owned_claims(customer_policy, customer_user)
+            created_customer, pruned_customer = self._ensure_customer_owned_claims(
+                customer_policy, customer_user
+            )
 
         self.stdout.write("Demo users created or updated")
         self.stdout.write(f"admin_user={admin_user.username} password={self.DEMO_PASSWORD}")
@@ -117,6 +119,7 @@ class Command(BaseCommand):
         self.stdout.write("Demo seed status")
         self.stdout.write(f"created_reviewer_queue_claims={created_reviewer}")
         self.stdout.write(f"created_customer_owned_claims={created_customer}")
+        self.stdout.write(f"pruned_customer_owned_claims={pruned_customer}")
         self.stdout.write(f"total_reviewer_queue_claims={self._reviewer_queue_claim_count()}")
         self.stdout.write(
             f"total_customer_owned_claims={self._customer_owned_claim_count(customer_user)}"
@@ -175,10 +178,13 @@ class Command(BaseCommand):
         return Claim.objects.filter(created_by=self.REVIEWER_SEED_MARKER).count()
 
     def _customer_owned_claim_count(self, customer_user: Any) -> int:
-        """Count customer-owned claims created by this demo seed for the given customer user."""
-        return Claim.objects.filter(
-            policy__holder__email=customer_user.email, created_by=customer_user.username
-        ).count()
+        """
+        Count customer-owned claims for the given demo customer user.
+
+        Customer console ownership currently resolves by `created_by == username` first,
+        so this count uses the same contract.
+        """
+        return Claim.objects.filter(created_by=customer_user.username).count()
 
     def _ensure_reviewer_queue_claims(self, policy: Policy) -> int:
         """
@@ -208,16 +214,29 @@ class Command(BaseCommand):
 
         return created
 
-    def _ensure_customer_owned_claims(self, policy: Policy, customer_user: Any) -> int:
+    def _ensure_customer_owned_claims(self, policy: Policy, customer_user: Any) -> tuple[int, int]:
         """
-        Ensure enough claims exist to demonstrate pagination in the customer portal.
+        Enforce a single customer-owned claim for the demo customer.
 
         Ownership contract
-        - policy holder email matches customer email
         - created_by matches customer username
+
+        Returns:
+        - created_count
+        - pruned_count
         """
-        existing = Claim.objects.filter(policy=policy, created_by=customer_user.username).count()
-        to_create = max(0, self.MIN_CUSTOMER_OWNED_CLAIMS - existing)
+        qs = Claim.objects.filter(created_by=customer_user.username).order_by("-created_at", "-id")
+        existing = qs.count()
+
+        pruned = 0
+        if existing > self.TARGET_CUSTOMER_OWNED_CLAIMS:
+            keep = self.TARGET_CUSTOMER_OWNED_CLAIMS
+            ids_to_delete = list(qs.values_list("id", flat=True)[keep:])
+            if ids_to_delete:
+                pruned, _ = Claim.objects.filter(id__in=ids_to_delete).delete()
+
+        existing_after_prune = Claim.objects.filter(created_by=customer_user.username).count()
+        to_create = max(0, self.TARGET_CUSTOMER_OWNED_CLAIMS - existing_after_prune)
 
         created = 0
         for i in range(to_create):
@@ -235,4 +254,4 @@ class Command(BaseCommand):
             )
             created += 1
 
-        return created
+        return created, pruned

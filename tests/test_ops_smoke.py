@@ -102,9 +102,11 @@ def test_ops_queue_applies_filters_and_exposes_pagination_context(client, review
     assert all(item.id != c2.id for item in items)
 
 
-def test_ops_claim_detail_page_renders_for_logged_in_user(client):
-    """Claim detail page should be accessible and render expected content."""
+def test_ops_claim_detail_page_renders_for_reviewer_user(client):
+    """Claim detail page should be accessible to reviewer users."""
     user = User.objects.create_user(username="ops_detail_user", password="password123")
+    group, _ = Group.objects.get_or_create(name="reviewer")
+    user.groups.add(group)
     client.force_login(user)
     claim = ClaimFactory()
 
@@ -114,6 +116,17 @@ def test_ops_claim_detail_page_renders_for_logged_in_user(client):
     assert resp.status_code == 200
     assert any(t.name == "ops/claim_detail.html" for t in resp.templates)
     assert resp.context["claim"].pk == claim.pk
+
+
+def test_ops_claim_detail_page_denies_wrong_role_user(client, normal_user):
+    client.force_login(normal_user)
+    claim = ClaimFactory()
+
+    url = reverse("ops:claim-detail", kwargs={"claim_id": claim.pk})
+    resp = client.get(url)
+
+    assert resp.status_code == 403
+    assert b"Forbidden" in resp.content
 
 
 @override_settings(DEBUG=True)
