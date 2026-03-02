@@ -4,7 +4,7 @@ DB-hitting tests for console access behaviour.
 Proof targets:
 - anonymous console access redirects to the correct surface login entry point, with `next`
 - authenticated wrong-role access returns 403 with the shared forbidden template
-- allowed role access returns 200 and renders the expected console headings
+- allowed role access returns 200 and renders the expected dashboard headings
 - post-login redirect is deterministic by entry point
 """
 
@@ -117,10 +117,28 @@ def test_admin_console_renders_and_links_to_django_admin_and_other_consoles(
 
 
 @pytest.mark.parametrize(
+    "console_path, expected_heading",
+    [
+        ("/console/reviewer/", b"Reviewer queue"),
+        ("/console/customer/", b"My claims"),
+    ],
+)
+def test_admin_can_open_reviewer_and_customer_dashboards(
+    client, users, user_password, console_path, expected_heading
+):
+    client.post(
+        "/login/admin/", data={"username": users["admin"].username, "password": user_password}
+    )
+    response = client.get(console_path)
+    assert response.status_code == 200
+    assert expected_heading in response.content
+
+
+@pytest.mark.parametrize(
     "role, console_path, heading",
     [
-        ("reviewer", "/console/reviewer/", b"Reviewer console"),
-        ("customer", "/console/customer/", b"Customer console"),
+        ("reviewer", "/console/reviewer/", b"Reviewer queue"),
+        ("customer", "/console/customer/", b"My claims"),
     ],
 )
 def test_role_console_renders_for_correct_role(

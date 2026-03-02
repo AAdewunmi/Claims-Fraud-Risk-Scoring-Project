@@ -2,12 +2,12 @@
 {% extends "ops/base.html" %}
 {% load static %}
 
-{% block title %}Queue, PolicyLens Ops{% endblock %}
+{% block title %}Reviewer queue, PolicyLens Ops{% endblock %}
 
 {% block content %}
   <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
-      <h1 class="h3 mb-1">Review queue</h1>
+      <h1 class="h3 mb-1">Reviewer queue</h1>
       <div class="text-muted">Prioritised by SLA and priority.</div>
     </div>
   </div>
@@ -51,6 +51,10 @@
 
   <div class="card shadow-sm">
     <div class="card-body p-0">
+      <div class="p-3 border-bottom">
+        {% include "site/_pagination.html" with pagination=pagination %}
+      </div>
+
       {% if items|length == 0 %}
         <div class="p-4">
           <div class="h5 mb-1">No claims to review</div>
@@ -101,6 +105,10 @@
           </table>
         </div>
       {% endif %}
+
+      <div class="p-3 border-top">
+        {% include "site/_pagination.html" with pagination=pagination %}
+      </div>
     </div>
   </div>
 {% endblock %}

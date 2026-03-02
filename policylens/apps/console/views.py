@@ -15,6 +15,8 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 
 from policylens.apps.core.authz import user_is_admin, user_is_customer, user_is_reviewer
+from policylens.apps.customer.views import customer_claim_list
+from policylens.apps.ops.views import ops_queue
 
 
 class RoleConsoleView(TemplateView):
@@ -72,16 +74,36 @@ class AdminConsoleView(RoleConsoleView):
 
 
 class ReviewerConsoleView(RoleConsoleView):
-    """Reviewer console requiring reviewer (or admin/superuser) access."""
+    """Reviewer console entry point rendering the reviewer dashboard."""
 
     template_name = "console/reviewer_home.html"
     surface_login_url_name = "accounts:login_reviewer"
     access_check = staticmethod(user_is_reviewer)
 
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """
+        Render the reviewer queue dashboard at the console entry path.
+
+        This preserves the stable `/console/reviewer/` entry point while serving
+        the real reviewer surface.
+        """
+        del args, kwargs
+        return ops_queue(request)
+
 
 class CustomerConsoleView(RoleConsoleView):
-    """Customer console requiring customer (or admin/superuser) access."""
+    """Customer console entry point rendering the customer dashboard."""
 
     template_name = "console/customer_home.html"
     surface_login_url_name = "accounts:login_customer"
     access_check = staticmethod(user_is_customer)
+
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """
+        Render the customer claim list dashboard at the console entry path.
+
+        This preserves the stable `/console/customer/` entry point while serving
+        the real customer surface.
+        """
+        del args, kwargs
+        return customer_claim_list(request)

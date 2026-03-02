@@ -56,6 +56,7 @@ def test_reviewer_console_allows_reviewer_group_user(client):
     response = client.get(reverse("console:reviewer_home"))
 
     assert response.status_code == 200
+    assert b"Reviewer queue" in response.content
 
 
 @pytest.mark.django_db
@@ -69,3 +70,4 @@ def test_customer_console_allows_customer_group_user(client):
     response = client.get(reverse("console:customer_home"))
 
     assert response.status_code == 200
+    assert b"My claims" in response.content
