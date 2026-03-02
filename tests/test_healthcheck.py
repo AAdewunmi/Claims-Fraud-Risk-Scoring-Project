@@ -14,11 +14,18 @@ from django.urls import reverse
 
 @pytest.mark.django_db
 def test_healthcheck_returns_ok(api_client):
-    """GET /api/health/ returns a minimal status payload."""
+    """GET /api/health/ returns readiness status and database check details."""
     url = reverse("healthcheck")
 
     resp = api_client.get(url)
     assert resp.status_code == 200
 
     body = resp.json()
-    assert body == {"status": "ok"}
+    assert body == {
+        "status": "ok",
+        "checks": {
+            "database": {
+                "status": "ok",
+            }
+        },
+    }
