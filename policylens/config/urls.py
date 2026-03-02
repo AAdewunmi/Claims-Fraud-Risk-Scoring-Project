@@ -1,20 +1,11 @@
-"""
-Root URL configuration for PolicyLens.
+"""Root URL configuration."""
 
-This file wires the multi-surface UI:
-- public landing
-- accounts surface logins
-- role consoles
-- ops reviewer surface
-- customer portal surface
-"""
+from __future__ import annotations
 
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-
-from policylens.config.views import healthcheck
 
 handler403 = "policylens.apps.accounts.views.forbidden_view"
 
@@ -28,8 +19,7 @@ urlpatterns = [
     # Customer portal
     path("", include("policylens.apps.customer.urls")),
     # API and operational surfaces
-    path("api/health/", healthcheck, name="healthcheck"),
-    path("api/", include("policylens.apps.claims.api.urls")),
+    path("api/", include("policylens.apps.api.urls")),
     path("ops/", include("policylens.apps.ops.urls")),
 ]
 
