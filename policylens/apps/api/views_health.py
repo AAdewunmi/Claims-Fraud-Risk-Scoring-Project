@@ -17,8 +17,6 @@ Contract
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
-
 from django.db import connections
 from django.db.utils import OperationalError
 from rest_framework.permissions import AllowAny
@@ -27,7 +25,7 @@ from rest_framework.status import HTTP_200_OK, HTTP_503_SERVICE_UNAVAILABLE
 from rest_framework.views import APIView
 
 
-def check_database() -> Tuple[bool, Optional[str]]:
+def check_database() -> tuple[bool, str | None]:
     """
     Verify that the default database connection is usable.
 
