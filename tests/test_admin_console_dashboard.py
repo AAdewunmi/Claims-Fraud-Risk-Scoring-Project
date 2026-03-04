@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.urls import reverse
+from django.utils import timezone
 
+from policylens.apps.console import views as console_views
 from policylens.apps.core.models import AdminAuditLog, AdminHealthCheck, AdminOperationalSetting
 
 pytestmark = pytest.mark.django_db
@@ -205,3 +209,146 @@ def test_admin_audit_feed_filters_and_detail_view_work(client):
     assert detail.status_code == 200
     assert b"Admin audit event" in detail.content
     assert b"Updated UI page size." in detail.content
+
+
+def test_admin_endpoints_redirect_anonymous_to_admin_login(client):
+    response_setting = client.post(
+        reverse("console:admin_setting_upsert"),
+        data={"key": "UI_PAGE_SIZE", "value": "15"},
+        follow=False,
+    )
+    assert response_setting.status_code == 302
+    assert response_setting["Location"] == "/login/admin/?next=/console/admin/settings/upsert/"
+
+    response_health = client.post(reverse("console:admin_health_run"), follow=False)
+    assert response_health.status_code == 302
+    assert response_health["Location"] == "/login/admin/?next=/console/admin/health/run/"
+
+    response_audit = client.get(reverse("console:admin_audit_detail", kwargs={"event_id": 9999}))
+    assert response_audit.status_code == 302
+    assert response_audit["Location"] == "/login/admin/?next=/console/admin/audit/9999/"
+
+
+def test_admin_setting_upsert_rejects_unsupported_setting_key(client):
+    admin_user = _create_admin_user()
+    client.force_login(admin_user)
+
+    response = client.post(
+        reverse("console:admin_setting_upsert"),
+        data={"key": "NOT_ALLOWED_KEY", "value": "anything"},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Unsupported setting key: NOT_ALLOWED_KEY." in response.content
+
+
+def test_admin_console_helper_parse_date_and_setting_validation_branches(monkeypatch):
+    assert console_views._parse_date("") is None
+    assert console_views._parse_date("not-a-date") is None
+    assert console_views._parse_date("2026-03-04") is not None
+
+    unknown_value, unknown_error = console_views._parse_and_validate_setting_value("UNKNOWN", "1")
+    assert unknown_value is None
+    assert "Unknown setting key" in (unknown_error or "")
+
+    int_value, int_error = console_views._parse_and_validate_setting_value("UI_PAGE_SIZE", "abc")
+    assert int_value is None
+    assert int_error == "UI_PAGE_SIZE must be an integer."
+
+    float_value_bad, float_error_bad = console_views._parse_and_validate_setting_value(
+        "ML_SCORE_THRESHOLD", "oops"
+    )
+    assert float_value_bad is None
+    assert float_error_bad == "ML_SCORE_THRESHOLD must be a decimal value."
+
+    float_value_range, float_error_range = console_views._parse_and_validate_setting_value(
+        "ML_SCORE_THRESHOLD", "2.2"
+    )
+    assert float_value_range is None
+    assert "must be between 0.0 and 1.0." in (float_error_range or "")
+
+    float_value_ok, float_error_ok = console_views._parse_and_validate_setting_value(
+        "ML_SCORE_THRESHOLD", "0.75"
+    )
+    assert float_value_ok == "0.75"
+    assert float_error_ok is None
+
+    bool_value_bad, bool_error_bad = console_views._parse_and_validate_setting_value(
+        "SECURE_SSL_REDIRECT", "maybe"
+    )
+    assert bool_value_bad is None
+    assert bool_error_bad == "SECURE_SSL_REDIRECT must be true/false."
+
+    bool_value_true, bool_error_true = console_views._parse_and_validate_setting_value(
+        "SECURE_SSL_REDIRECT", "yes"
+    )
+    assert bool_value_true == "true"
+    assert bool_error_true is None
+
+    bool_value_false, bool_error_false = console_views._parse_and_validate_setting_value(
+        "SECURE_SSL_REDIRECT", "0"
+    )
+    assert bool_value_false == "false"
+    assert bool_error_false is None
+
+    monkeypatch.setitem(
+        console_views.ADMIN_OPER_SETTING_SPECS,
+        "CUSTOM_TEXT",
+        {
+            "label": "Custom text",
+            "value_type": AdminOperationalSetting.ValueType.STRING,
+            "default": "",
+            "description": "custom",
+        },
+    )
+
+    too_long = "x" * 256
+    string_value_bad, string_error_bad = console_views._parse_and_validate_setting_value(
+        "CUSTOM_TEXT", too_long
+    )
+    assert string_value_bad is None
+    assert string_error_bad == "CUSTOM_TEXT exceeds max length (255)."
+
+    string_value_ok, string_error_ok = console_views._parse_and_validate_setting_value(
+        "CUSTOM_TEXT", "  ok-value  "
+    )
+    assert string_value_ok == "ok-value"
+    assert string_error_ok is None
+
+
+def test_admin_audit_date_filters_apply(client):
+    admin_user = _create_admin_user()
+    older_actor = get_user_model().objects.create_user(
+        username="older-actor", password="password123"
+    )
+
+    older_event = AdminAuditLog.objects.create(
+        actor=older_actor,
+        event_type=AdminAuditLog.EventType.CONFIG_UPDATED,
+        message="Older event",
+    )
+    newer_event = AdminAuditLog.objects.create(
+        actor=admin_user,
+        event_type=AdminAuditLog.EventType.USER_ROLE_UPDATED,
+        message="Newer event",
+    )
+
+    yesterday = (timezone.now() - timedelta(days=1)).date()
+    two_days_ago = (timezone.now() - timedelta(days=2)).date()
+    AdminAuditLog.objects.filter(pk=older_event.pk).update(
+        created_at=timezone.now() - timedelta(days=2)
+    )
+    AdminAuditLog.objects.filter(pk=newer_event.pk).update(created_at=timezone.now())
+
+    client.force_login(admin_user)
+
+    response_from = client.get(reverse("console:admin_home"), data={"date_from": str(yesterday)})
+    assert response_from.status_code == 200
+    assert b"Newer event" in response_from.content
+    assert b"Older event" not in response_from.content
+
+    response_to = client.get(reverse("console:admin_home"), data={"date_to": str(two_days_ago)})
+    assert response_to.status_code == 200
+    assert b"Older event" in response_to.content
+    assert b"Newer event" not in response_to.content
