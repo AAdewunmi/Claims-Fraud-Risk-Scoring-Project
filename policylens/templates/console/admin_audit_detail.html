@@ -1,0 +1,40 @@
+{% extends "site/base.html" %}
+
+{% block title %}Admin audit event | PolicyLens{% endblock %}
+
+{% block header_nav %}
+  <nav class="nav" aria-label="Admin audit navigation">
+    <a class="nav-link" href="{% url 'console:admin_home' %}">Back to admin console</a>
+    <a class="nav-link" href="{{ django_admin_url }}">Django admin</a>
+    <a class="nav-link" href="{{ reviewer_console_url }}">Review console</a>
+    <a class="nav-link" href="{{ customer_console_url }}">Customer console</a>
+    <form class="nav-inline-form" method="post" action="{% url 'accounts:logout_to_landing' %}">
+      {% csrf_token %}
+      <button class="nav-link nav-link-button" type="submit">Admin logout</button>
+    </form>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1>Admin audit event</h1>
+    <p class="muted">
+      Full event detail for governance and compliance review.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>{{ event.get_event_type_display }}</h2>
+    <p>
+      <strong>When:</strong> {{ event.created_at }}<br />
+      <strong>Actor:</strong> {{ event.actor.username|default:"system" }}<br />
+      <strong>Target user:</strong> {{ event.target_user.username|default:"n/a" }}<br />
+      <strong>Setting key:</strong> {{ event.setting_key|default:"n/a" }}
+    </p>
+    <p style="margin-top: 12px;">
+      <strong>Summary:</strong> {{ event.message|default:"(no message)" }}
+    </p>
+    <h3 style="margin-top: 16px;">Metadata</h3>
+    <pre style="padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: #fbfdff;">{{ event.metadata }}</pre>
+  </section>
+{% endblock %}

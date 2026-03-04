@@ -75,15 +75,15 @@ def _parse_page_number(raw: str | None) -> int:
     return value
 
 
-def _build_url(request: HttpRequest, *, page_number: int) -> str:
+def _build_url(request: HttpRequest, *, page_number: int, page_param: str = "page") -> str:
     """
-    Build a URL querystring preserving existing query params while overriding `page`.
+    Build a URL querystring preserving existing query params while overriding page param.
 
-    This preserves filters by copying request.GET and replacing only the page.
+    This preserves filters by copying request.GET and replacing only the page parameter.
     """
 
     params = request.GET.copy()
-    params["page"] = str(page_number)
+    params[page_param] = str(page_number)
     query = urlencode(params, doseq=True)
     return f"{request.path}?{query}" if query else request.path
 
@@ -141,20 +141,30 @@ def paginate_request_queryset(
 
     # Compute navigation URLs (empty when disabled).
     first_url = (
-        _build_url(request, page_number=1)
+        _build_url(request, page_number=1, page_param=page_param)
         if paginator.num_pages > 1 and page_obj.number != 1
         else ""
     )
     prev_url = (
-        _build_url(request, page_number=page_obj.previous_page_number())
+        _build_url(
+            request,
+            page_number=page_obj.previous_page_number(),
+            page_param=page_param,
+        )
         if page_obj.has_previous()
         else ""
     )
     next_url = (
-        _build_url(request, page_number=page_obj.next_page_number()) if page_obj.has_next() else ""
+        _build_url(
+            request,
+            page_number=page_obj.next_page_number(),
+            page_param=page_param,
+        )
+        if page_obj.has_next()
+        else ""
     )
     last_url = (
-        _build_url(request, page_number=paginator.num_pages)
+        _build_url(request, page_number=paginator.num_pages, page_param=page_param)
         if paginator.num_pages > 1 and page_obj.number != paginator.num_pages
         else ""
     )
@@ -162,7 +172,9 @@ def paginate_request_queryset(
     window_numbers = _page_window(page_obj.number, paginator.num_pages, radius=window_radius)
     links = [
         PageLink(
-            number=n, url=_build_url(request, page_number=n), is_current=(n == page_obj.number)
+            number=n,
+            url=_build_url(request, page_number=n, page_param=page_param),
+            is_current=(n == page_obj.number),
         )
         for n in window_numbers
     ]

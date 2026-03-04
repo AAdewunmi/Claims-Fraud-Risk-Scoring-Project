@@ -1,0 +1,354 @@
+"""Integration tests for the admin governance dashboard."""
+
+from __future__ import annotations
+
+from datetime import timedelta
+
+import pytest
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.urls import reverse
+from django.utils import timezone
+
+from policylens.apps.console import views as console_views
+from policylens.apps.core.models import AdminAuditLog, AdminHealthCheck, AdminOperationalSetting
+
+pytestmark = pytest.mark.django_db
+
+
+def _create_role_groups() -> dict[str, Group]:
+    return {
+        "admin": Group.objects.create(name="admin"),
+        "reviewer": Group.objects.create(name="reviewer"),
+        "customer": Group.objects.create(name="customer"),
+    }
+
+
+def _create_admin_user(username: str = "admin-user"):
+    User = get_user_model()
+    admin_group, _ = Group.objects.get_or_create(name="admin")
+    user = User.objects.create_user(username=username, password="password123")
+    user.groups.add(admin_group)
+    return user
+
+
+def test_admin_dashboard_renders_governance_sections(client):
+    admin_user = _create_admin_user()
+    client.force_login(admin_user)
+
+    response = client.get(reverse("console:admin_home"))
+
+    assert response.status_code == 200
+    assert b"User and role management" in response.content
+    assert b"Configuration management" in response.content
+    assert b"Audit oversight" in response.content
+    assert b"Health and ops controls" in response.content
+
+
+def test_admin_user_management_paginates_five_per_page(client):
+    admin_user = _create_admin_user()
+    User = get_user_model()
+    for idx in range(8):
+        User.objects.create_user(username=f"paged-user-{idx:02d}", password="password123")
+
+    client.force_login(admin_user)
+
+    page_one = client.get(reverse("console:admin_home"), data={"q": "paged-user-"})
+    assert page_one.status_code == 200
+    assert len(page_one.context["managed_users"]) == 5
+    assert page_one.context["users_pagination"].paginator.per_page == 5
+    assert page_one.context["users_pagination"].page_obj.number == 1
+    assert b"paged-user-00" in page_one.content
+    assert b"paged-user-04" in page_one.content
+    assert b"paged-user-05" not in page_one.content
+    assert "users_page=2" in page_one.context["users_pagination"].next_url
+
+    page_two = client.get(
+        reverse("console:admin_home"),
+        data={"q": "paged-user-", "users_page": "2"},
+    )
+    assert page_two.status_code == 200
+    assert len(page_two.context["managed_users"]) == 3
+    assert page_two.context["users_pagination"].page_obj.number == 2
+    assert b"paged-user-05" in page_two.content
+    assert b"paged-user-07" in page_two.content
+    assert b"paged-user-00" not in page_two.content
+
+
+def test_admin_can_update_roles_and_access_and_is_audited(client):
+    groups = _create_role_groups()
+    admin_user = _create_admin_user()
+    User = get_user_model()
+    target_user = User.objects.create_user(username="target-user", password="password123")
+    target_user.groups.add(groups["reviewer"])
+    target_user.is_active = True
+    target_user.save(update_fields=["is_active"])
+
+    client.force_login(admin_user)
+    response = client.post(
+        reverse("console:admin_user_update", kwargs={"user_id": target_user.id}),
+        data={
+            "groups": ["admin", "customer"],
+            # omit `is_active` to assert deactivation path
+        },
+        follow=False,
+    )
+
+    assert response.status_code == 302
+    target_user.refresh_from_db()
+    assert target_user.is_active is False
+    assert set(target_user.groups.values_list("name", flat=True)) == {"admin", "customer"}
+    assert AdminAuditLog.objects.filter(
+        event_type=AdminAuditLog.EventType.USER_ROLE_UPDATED,
+        target_user=target_user,
+    ).exists()
+    assert AdminAuditLog.objects.filter(
+        event_type=AdminAuditLog.EventType.USER_ACCESS_UPDATED,
+        target_user=target_user,
+    ).exists()
+
+
+def test_non_admin_is_forbidden_from_admin_write_endpoints(client):
+    _create_role_groups()
+    User = get_user_model()
+    reviewer_group = Group.objects.get(name="reviewer")
+    actor = User.objects.create_user(username="reviewer-user", password="password123")
+    actor.groups.add(reviewer_group)
+    target = User.objects.create_user(username="target-user", password="password123")
+
+    client.force_login(actor)
+    response = client.post(
+        reverse("console:admin_user_update", kwargs={"user_id": target.id}),
+        data={"groups": ["customer"], "is_active": "on"},
+    )
+
+    assert response.status_code == 403
+    assert b"Forbidden" in response.content
+    assert AdminAuditLog.objects.count() == 0
+
+
+def test_admin_setting_upsert_validates_and_tracks_history(client):
+    admin_user = _create_admin_user()
+    client.force_login(admin_user)
+
+    response_ok = client.post(
+        reverse("console:admin_setting_upsert"),
+        data={"key": "UI_PAGE_SIZE", "value": "20"},
+        follow=False,
+    )
+    assert response_ok.status_code == 302
+
+    setting = AdminOperationalSetting.objects.get(key="UI_PAGE_SIZE")
+    assert setting.value == "20"
+    assert setting.value_type == AdminOperationalSetting.ValueType.INTEGER
+    assert setting.updated_by == admin_user
+    assert AdminAuditLog.objects.filter(
+        event_type=AdminAuditLog.EventType.CONFIG_UPDATED,
+        setting_key="UI_PAGE_SIZE",
+    ).exists()
+
+    response_invalid = client.post(
+        reverse("console:admin_setting_upsert"),
+        data={"key": "UI_PAGE_SIZE", "value": "1000"},
+        follow=True,
+    )
+    assert response_invalid.status_code == 200
+    setting.refresh_from_db()
+    assert setting.value == "20"
+    assert b"must be between 5 and 100" in response_invalid.content
+
+
+def test_admin_health_run_stores_snapshot_and_logs_audit(client, monkeypatch):
+    admin_user = _create_admin_user()
+    client.force_login(admin_user)
+
+    monkeypatch.setattr(
+        "policylens.apps.console.views.check_database",
+        lambda: (False, "OperationalError"),
+    )
+
+    response = client.post(reverse("console:admin_health_run"), follow=True)
+
+    assert response.status_code == 200
+    health_check = AdminHealthCheck.objects.get()
+    assert health_check.status == "error"
+    assert health_check.details["database"]["status"] == "error"
+    assert health_check.details["database"]["error"] == "OperationalError"
+    assert AdminAuditLog.objects.filter(event_type=AdminAuditLog.EventType.HEALTH_CHECKED).exists()
+    assert b"Latest status:" in response.content
+
+
+def test_admin_audit_feed_filters_and_detail_view_work(client):
+    admin_user = _create_admin_user()
+    User = get_user_model()
+    other_actor = User.objects.create_user(username="ops-admin", password="password123")
+
+    kept_event = AdminAuditLog.objects.create(
+        actor=other_actor,
+        event_type=AdminAuditLog.EventType.CONFIG_UPDATED,
+        message="Updated UI page size.",
+        metadata={"new_value": "30"},
+    )
+    AdminAuditLog.objects.create(
+        actor=admin_user,
+        event_type=AdminAuditLog.EventType.USER_ROLE_UPDATED,
+        message="Changed role membership.",
+    )
+
+    client.force_login(admin_user)
+
+    response = client.get(
+        reverse("console:admin_home"),
+        data={"actor": "ops", "event_type": AdminAuditLog.EventType.CONFIG_UPDATED},
+    )
+    assert response.status_code == 200
+    assert b"Updated UI page size." in response.content
+    assert b"Changed role membership." not in response.content
+
+    detail = client.get(reverse("console:admin_audit_detail", kwargs={"event_id": kept_event.id}))
+    assert detail.status_code == 200
+    assert b"Admin audit event" in detail.content
+    assert b"Updated UI page size." in detail.content
+
+
+def test_admin_endpoints_redirect_anonymous_to_admin_login(client):
+    response_setting = client.post(
+        reverse("console:admin_setting_upsert"),
+        data={"key": "UI_PAGE_SIZE", "value": "15"},
+        follow=False,
+    )
+    assert response_setting.status_code == 302
+    assert response_setting["Location"] == "/login/admin/?next=/console/admin/settings/upsert/"
+
+    response_health = client.post(reverse("console:admin_health_run"), follow=False)
+    assert response_health.status_code == 302
+    assert response_health["Location"] == "/login/admin/?next=/console/admin/health/run/"
+
+    response_audit = client.get(reverse("console:admin_audit_detail", kwargs={"event_id": 9999}))
+    assert response_audit.status_code == 302
+    assert response_audit["Location"] == "/login/admin/?next=/console/admin/audit/9999/"
+
+
+def test_admin_setting_upsert_rejects_unsupported_setting_key(client):
+    admin_user = _create_admin_user()
+    client.force_login(admin_user)
+
+    response = client.post(
+        reverse("console:admin_setting_upsert"),
+        data={"key": "NOT_ALLOWED_KEY", "value": "anything"},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Unsupported setting key: NOT_ALLOWED_KEY." in response.content
+
+
+def test_admin_console_helper_parse_date_and_setting_validation_branches(monkeypatch):
+    assert console_views._parse_date("") is None
+    assert console_views._parse_date("not-a-date") is None
+    assert console_views._parse_date("2026-03-04") is not None
+
+    unknown_value, unknown_error = console_views._parse_and_validate_setting_value("UNKNOWN", "1")
+    assert unknown_value is None
+    assert "Unknown setting key" in (unknown_error or "")
+
+    int_value, int_error = console_views._parse_and_validate_setting_value("UI_PAGE_SIZE", "abc")
+    assert int_value is None
+    assert int_error == "UI_PAGE_SIZE must be an integer."
+
+    float_value_bad, float_error_bad = console_views._parse_and_validate_setting_value(
+        "ML_SCORE_THRESHOLD", "oops"
+    )
+    assert float_value_bad is None
+    assert float_error_bad == "ML_SCORE_THRESHOLD must be a decimal value."
+
+    float_value_range, float_error_range = console_views._parse_and_validate_setting_value(
+        "ML_SCORE_THRESHOLD", "2.2"
+    )
+    assert float_value_range is None
+    assert "must be between 0.0 and 1.0." in (float_error_range or "")
+
+    float_value_ok, float_error_ok = console_views._parse_and_validate_setting_value(
+        "ML_SCORE_THRESHOLD", "0.75"
+    )
+    assert float_value_ok == "0.75"
+    assert float_error_ok is None
+
+    bool_value_bad, bool_error_bad = console_views._parse_and_validate_setting_value(
+        "SECURE_SSL_REDIRECT", "maybe"
+    )
+    assert bool_value_bad is None
+    assert bool_error_bad == "SECURE_SSL_REDIRECT must be true/false."
+
+    bool_value_true, bool_error_true = console_views._parse_and_validate_setting_value(
+        "SECURE_SSL_REDIRECT", "yes"
+    )
+    assert bool_value_true == "true"
+    assert bool_error_true is None
+
+    bool_value_false, bool_error_false = console_views._parse_and_validate_setting_value(
+        "SECURE_SSL_REDIRECT", "0"
+    )
+    assert bool_value_false == "false"
+    assert bool_error_false is None
+
+    monkeypatch.setitem(
+        console_views.ADMIN_OPER_SETTING_SPECS,
+        "CUSTOM_TEXT",
+        {
+            "label": "Custom text",
+            "value_type": AdminOperationalSetting.ValueType.STRING,
+            "default": "",
+            "description": "custom",
+        },
+    )
+
+    too_long = "x" * 256
+    string_value_bad, string_error_bad = console_views._parse_and_validate_setting_value(
+        "CUSTOM_TEXT", too_long
+    )
+    assert string_value_bad is None
+    assert string_error_bad == "CUSTOM_TEXT exceeds max length (255)."
+
+    string_value_ok, string_error_ok = console_views._parse_and_validate_setting_value(
+        "CUSTOM_TEXT", "  ok-value  "
+    )
+    assert string_value_ok == "ok-value"
+    assert string_error_ok is None
+
+
+def test_admin_audit_date_filters_apply(client):
+    admin_user = _create_admin_user()
+    older_actor = get_user_model().objects.create_user(
+        username="older-actor", password="password123"
+    )
+
+    older_event = AdminAuditLog.objects.create(
+        actor=older_actor,
+        event_type=AdminAuditLog.EventType.CONFIG_UPDATED,
+        message="Older event",
+    )
+    newer_event = AdminAuditLog.objects.create(
+        actor=admin_user,
+        event_type=AdminAuditLog.EventType.USER_ROLE_UPDATED,
+        message="Newer event",
+    )
+
+    yesterday = (timezone.now() - timedelta(days=1)).date()
+    two_days_ago = (timezone.now() - timedelta(days=2)).date()
+    AdminAuditLog.objects.filter(pk=older_event.pk).update(
+        created_at=timezone.now() - timedelta(days=2)
+    )
+    AdminAuditLog.objects.filter(pk=newer_event.pk).update(created_at=timezone.now())
+
+    client.force_login(admin_user)
+
+    response_from = client.get(reverse("console:admin_home"), data={"date_from": str(yesterday)})
+    assert response_from.status_code == 200
+    assert b"Newer event" in response_from.content
+    assert b"Older event" not in response_from.content
+
+    response_to = client.get(reverse("console:admin_home"), data={"date_to": str(two_days_ago)})
+    assert response_to.status_code == 200
+    assert b"Older event" in response_to.content
+    assert b"Newer event" not in response_to.content
