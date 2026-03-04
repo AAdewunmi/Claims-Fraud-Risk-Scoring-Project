@@ -2,7 +2,7 @@
 """
 Django settings for PolicyLens.
 
-Week 7 Day 2 adds production hardening for running behind a reverse proxy (Nginx):
+Sprint 7 Day 2 adds production hardening for running behind a reverse proxy (Nginx):
 - Secure cookie flags suitable for HTTPS termination
 - CSRF trusted origins for deployed hosts
 - Proxy header support so Django correctly detects HTTPS and host
@@ -59,7 +59,9 @@ def _split_csv(value: str) -> list[str]:
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
-    raise RuntimeError("DJANGO_SECRET_KEY is required. Set it in .env or environment variables.")
+    raise RuntimeError(  # pragma: no cover
+        "DJANGO_SECRET_KEY is required. Set it in .env or environment variables."
+    )
 
 DEBUG = env("DJANGO_DEBUG")
 
