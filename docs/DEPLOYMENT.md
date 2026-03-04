@@ -28,6 +28,14 @@ These must be set in the production runtime environment:
 - DATABASE_URL
 - DJANGO_CSRF_TRUSTED_ORIGINS
 
+## Secure compose profile
+
+For the secure Docker profile (`docker/docker-compose.prod.secure.yml`):
+
+- `.env.prod` is ignored by `.gitignore` (`.env.*`) and is not committed.
+- Replace all placeholder values in `.env.prod` before deployment.
+- Launch with `docker compose -f docker/docker-compose.prod.secure.yml up --build`.
+
 ## Reverse proxy and HTTPS detection
 
 Django must understand that the external client connection is HTTPS even though Nginx forwards requests to Django over HTTP. This is required for secure cookies, CSRF, and correct redirect behaviour.
