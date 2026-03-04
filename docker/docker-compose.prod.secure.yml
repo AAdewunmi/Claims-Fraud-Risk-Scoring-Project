@@ -45,6 +45,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - policylens_staticfiles:/staticfiles:ro
       - policylens_media:/media:ro
 
