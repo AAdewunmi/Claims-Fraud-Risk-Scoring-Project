@@ -18,17 +18,246 @@
   <section class="card">
     <h1>Admin console</h1>
     <p class="muted">
-      This is the operational control plane for PolicyLens administrators with governed access and system-wide
-      navigation.
+      Governance and system operations dashboard for PolicyLens administrators.
     </p>
     <p class="muted"><strong>Signed in as:</strong> {{ request.user.username }}</p>
+    {% if notice %}
+      <p class="alert" style="margin-top: 12px;">{{ notice }}</p>
+    {% endif %}
+    {% if error %}
+      <p class="alert" style="margin-top: 12px;">{{ error }}</p>
+    {% endif %}
   </section>
 
   <section class="card">
-    <h2>Operations status</h2>
-    <p>
-      Administrative operations are available for configuration management, user lifecycle governance, audit oversight,
-      and secure access control.
+    <h2>User and role management</h2>
+    <p class="muted">
+      Search users, update role membership, and activate/deactivate account access.
     </p>
+
+    <form method="get" style="margin-top: 14px;">
+      <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px;">
+        <input
+          name="q"
+          value="{{ search_query }}"
+          placeholder="Search by username, email, or name"
+          style="padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fbfdff;"
+        />
+        <button class="button" type="submit">Search users</button>
+      </div>
+    </form>
+
+    <div style="margin-top: 16px; overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">User</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Current roles</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Access</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Update</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for managed_user in managed_users %}
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">
+                <div style="font-weight: 700;">{{ managed_user.username }}</div>
+                <div class="muted">{{ managed_user.email|default:"(no email)" }}</div>
+              </td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">{{ managed_user.role_names_display }}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">
+                {% if managed_user.is_active %}Active{% else %}Inactive{% endif %}
+              </td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">
+                <form method="post" action="{% url 'console:admin_user_update' user_id=managed_user.id %}">
+                  {% csrf_token %}
+                  <label style="display: inline-flex; align-items: center; gap: 6px; margin-right: 8px;">
+                    <input type="checkbox" name="groups" value="admin" {% if "admin" in managed_user.role_names %}checked{% endif %}/>
+                    Admin
+                  </label>
+                  <label style="display: inline-flex; align-items: center; gap: 6px; margin-right: 8px;">
+                    <input type="checkbox" name="groups" value="reviewer" {% if "reviewer" in managed_user.role_names %}checked{% endif %}/>
+                    Reviewer
+                  </label>
+                  <label style="display: inline-flex; align-items: center; gap: 6px; margin-right: 8px;">
+                    <input type="checkbox" name="groups" value="customer" {% if "customer" in managed_user.role_names %}checked{% endif %}/>
+                    Customer
+                  </label>
+                  <label style="display: inline-flex; align-items: center; gap: 6px; margin-right: 8px;">
+                    <input type="checkbox" name="is_active" {% if managed_user.is_active %}checked{% endif %}/>
+                    Active
+                  </label>
+                  <button class="button button-secondary" type="submit">Save</button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" style="padding: 12px; color: var(--muted);">No users matched your search.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Configuration management</h2>
+    <p class="muted">
+      Admin-editable operational settings with validation and audit history.
+    </p>
+
+    <div style="margin-top: 16px; overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Setting</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Type</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Value</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Last updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in setting_rows %}
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">
+                <div style="font-weight: 700;">{{ row.key }}</div>
+                <div class="muted">{{ row.description }}</div>
+              </td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">{{ row.value_type }}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">
+                <form method="post" action="{% url 'console:admin_setting_upsert' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="key" value="{{ row.key }}" />
+                  <input
+                    name="value"
+                    value="{{ row.value }}"
+                    style="padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fbfdff;"
+                  />
+                  <button class="button button-secondary" type="submit">Save</button>
+                </form>
+              </td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">
+                {% if row.updated_at %}
+                  {{ row.updated_at }} by {{ row.updated_by.username|default:"system" }}
+                {% else %}
+                  <span class="muted">Default value in use</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Audit oversight</h2>
+    <p class="muted">
+      Filter admin events by actor, event type, and date range.
+    </p>
+
+    <form method="get" style="margin-top: 12px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+        <label class="field" style="margin: 0;">
+          <span>Actor</span>
+          <input
+            name="actor"
+            value="{{ filter_actor }}"
+            placeholder="username"
+            style="padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fbfdff;"
+          />
+        </label>
+        <label class="field" style="margin: 0;">
+          <span>Event type</span>
+          <select name="event_type" style="padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fbfdff;">
+            <option value="">All</option>
+            {% for event_key, event_label in event_type_choices %}
+              <option value="{{ event_key }}" {% if filter_event_type == event_key %}selected{% endif %}>
+                {{ event_label }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field" style="margin: 0;">
+          <span>Date from</span>
+          <input
+            type="date"
+            name="date_from"
+            value="{{ filter_date_from }}"
+            style="padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fbfdff;"
+          />
+        </label>
+        <label class="field" style="margin: 0;">
+          <span>Date to</span>
+          <input
+            type="date"
+            name="date_to"
+            value="{{ filter_date_to }}"
+            style="padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fbfdff;"
+          />
+        </label>
+      </div>
+      <div class="button-row">
+        <button class="button" type="submit">Filter audit feed</button>
+        <a class="button button-secondary" href="{% url 'console:admin_home' %}">Reset filters</a>
+      </div>
+    </form>
+
+    <div style="margin-top: 14px; overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">When</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Actor</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Event</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Summary</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in audit_events %}
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">{{ event.created_at }}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">{{ event.actor.username|default:"system" }}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">{{ event.get_event_type_display }}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">{{ event.message }}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--border);">
+                <a class="button button-secondary" href="{% url 'console:admin_audit_detail' event_id=event.id %}">Open</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" style="padding: 12px; color: var(--muted);">No audit events for the selected filters.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Health and ops controls</h2>
+    <p class="muted">
+      Run readiness checks and inspect the latest result details.
+    </p>
+
+    <form method="post" action="{% url 'console:admin_health_run' %}" style="margin-top: 12px;">
+      {% csrf_token %}
+      <button class="button" type="submit">Run readiness check</button>
+    </form>
+
+    {% if latest_health_check %}
+      <div style="margin-top: 14px;">
+        <p>
+          <strong>Latest status:</strong> {{ latest_health_check.status }}<br />
+          <strong>Checked at:</strong> {{ latest_health_check.checked_at }}<br />
+          <strong>Checked by:</strong> {{ latest_health_check.checked_by.username|default:"system" }}
+        </p>
+        <pre style="margin-top: 10px; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: #fbfdff;">{{ latest_health_check.details }}</pre>
+      </div>
+    {% else %}
+      <p class="muted" style="margin-top: 12px;">No health checks have been run yet.</p>
+    {% endif %}
   </section>
 {% endblock %}
