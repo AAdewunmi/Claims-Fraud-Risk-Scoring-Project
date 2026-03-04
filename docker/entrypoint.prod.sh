@@ -1,12 +1,14 @@
 #!/usr/bin/env sh
 set -eu
 
-if [ "${DJANGO_RUN_MIGRATIONS:-1}" = "1" ]; then
-  python manage.py migrate --noinput
-fi
+if [ "${1:-}" = "gunicorn" ]; then
+  if [ "${DJANGO_RUN_MIGRATIONS:-1}" = "1" ]; then
+    python manage.py migrate --noinput
+  fi
 
-if [ "${DJANGO_COLLECTSTATIC:-1}" = "1" ]; then
-  python manage.py collectstatic --noinput
+  if [ "${DJANGO_COLLECTSTATIC:-1}" = "1" ]; then
+    python manage.py collectstatic --noinput
+  fi
 fi
 
 exec "$@"

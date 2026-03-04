@@ -19,6 +19,7 @@ COPY . /app
 
 # Create a non-root user for production containers.
 RUN useradd --create-home --shell /bin/bash appuser \
+  && mkdir -p /app/staticfiles /app/media /app/artifacts \
   && chmod +x /app/docker/entrypoint.prod.sh \
   && chown -R appuser:appuser /app
 
