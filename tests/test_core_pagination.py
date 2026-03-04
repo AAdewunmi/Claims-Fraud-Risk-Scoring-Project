@@ -63,3 +63,18 @@ def test_paginate_empty_queryset_sets_showing_range_to_zero():
 def test_page_window_handles_non_positive_total_pages():
     """Window helper should still return a safe page list when total_pages <= 0."""
     assert _page_window(current=1, total_pages=0) == [1]
+
+
+def test_paginate_supports_custom_page_param_for_links():
+    """Custom page params should be used in generated URLs."""
+    request = RequestFactory().get("/console/admin/", data={"q": "ops", "users_page": "2"})
+    pagination = paginate_request_queryset(
+        request,
+        list(range(12)),
+        page_size=5,
+        page_param="users_page",
+    )
+
+    assert pagination.page_obj.number == 2
+    assert pagination.prev_url == "/console/admin/?q=ops&users_page=1"
+    assert pagination.next_url == "/console/admin/?q=ops&users_page=3"

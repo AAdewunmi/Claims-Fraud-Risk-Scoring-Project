@@ -41,6 +41,36 @@ def test_admin_dashboard_renders_governance_sections(client):
     assert b"Health and ops controls" in response.content
 
 
+def test_admin_user_management_paginates_five_per_page(client):
+    admin_user = _create_admin_user()
+    User = get_user_model()
+    for idx in range(8):
+        User.objects.create_user(username=f"paged-user-{idx:02d}", password="password123")
+
+    client.force_login(admin_user)
+
+    page_one = client.get(reverse("console:admin_home"), data={"q": "paged-user-"})
+    assert page_one.status_code == 200
+    assert len(page_one.context["managed_users"]) == 5
+    assert page_one.context["users_pagination"].paginator.per_page == 5
+    assert page_one.context["users_pagination"].page_obj.number == 1
+    assert b"paged-user-00" in page_one.content
+    assert b"paged-user-04" in page_one.content
+    assert b"paged-user-05" not in page_one.content
+    assert "users_page=2" in page_one.context["users_pagination"].next_url
+
+    page_two = client.get(
+        reverse("console:admin_home"),
+        data={"q": "paged-user-", "users_page": "2"},
+    )
+    assert page_two.status_code == 200
+    assert len(page_two.context["managed_users"]) == 3
+    assert page_two.context["users_pagination"].page_obj.number == 2
+    assert b"paged-user-05" in page_two.content
+    assert b"paged-user-07" in page_two.content
+    assert b"paged-user-00" not in page_two.content
+
+
 def test_admin_can_update_roles_and_access_and_is_audited(client):
     groups = _create_role_groups()
     admin_user = _create_admin_user()

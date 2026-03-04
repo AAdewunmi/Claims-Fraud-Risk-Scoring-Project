@@ -25,6 +25,7 @@ from django.views.generic import TemplateView
 from policylens.apps.api.views_health import check_database
 from policylens.apps.core.authz import user_is_admin, user_is_customer, user_is_reviewer
 from policylens.apps.core.models import AdminAuditLog, AdminHealthCheck, AdminOperationalSetting
+from policylens.apps.core.pagination import paginate_request_queryset
 from policylens.apps.customer.views import customer_claim_list
 from policylens.apps.ops.views import ops_queue
 
@@ -239,7 +240,13 @@ class AdminConsoleView(RoleConsoleView):
                 | Q(first_name__icontains=query)
                 | Q(last_name__icontains=query)
             )
-        users = list(users_qs[:100])
+        users_pagination = paginate_request_queryset(
+            self.request,
+            users_qs,
+            page_size=5,
+            page_param="users_page",
+        )
+        users = list(users_pagination.page_obj.object_list)
         for user in users:
             role_names = sorted(
                 [group.name for group in user.groups.all() if group.name in ROLE_GROUP_SET]
@@ -291,6 +298,7 @@ class AdminConsoleView(RoleConsoleView):
         context["reviewer_console_url"] = reverse("console:reviewer_home")
         context["customer_console_url"] = reverse("console:customer_home")
         context["managed_users"] = users
+        context["users_pagination"] = users_pagination
         context["search_query"] = query
         context["setting_rows"] = setting_rows
         context["audit_events"] = list(audit_qs[:100])
