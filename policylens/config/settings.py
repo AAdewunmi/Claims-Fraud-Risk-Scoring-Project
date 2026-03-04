@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from importlib.util import find_spec
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 import environ
 
@@ -45,7 +44,7 @@ if ENV_FILE.exists():
     env.read_env(str(ENV_FILE))
 
 
-def _split_csv(value: str) -> List[str]:
+def _split_csv(value: str) -> list[str]:
     """
     Split a comma-separated string into a clean list, dropping empty parts.
 
@@ -178,7 +177,7 @@ LOGIN_REDIRECT_URL = "/"
 # - Nginx should set X-Forwarded-Proto: https
 # - optionally set X-Forwarded-Host when using a different upstream host header
 _secure_proxy_enabled = env("DJANGO_SECURE_PROXY_SSL_HEADER")
-SECURE_PROXY_SSL_HEADER: Optional[Tuple[str, str]] = (
+SECURE_PROXY_SSL_HEADER: tuple[str, str] | None = (
     ("HTTP_X_FORWARDED_PROTO", "https") if _secure_proxy_enabled else None
 )
 
