@@ -1,0 +1,30 @@
+# path: docker/Dockerfile.prod
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Keep system packages minimal. psycopg[binary] avoids needing build tooling.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt \
+  && pip install --no-cache-dir gunicorn==22.0.0
+
+COPY . /app
+
+# Create a non-root user for production containers.
+RUN useradd --create-home --shell /bin/bash appuser \
+  && chmod +x /app/docker/entrypoint.prod.sh \
+  && chown -R appuser:appuser /app
+
+USER appuser
+
+EXPOSE 8000
+
+ENTRYPOINT ["/app/docker/entrypoint.prod.sh"]
+CMD ["gunicorn", "policylens.config.wsgi:application", "--config", "/app/docker/gunicorn/gunicorn.conf.py"]
