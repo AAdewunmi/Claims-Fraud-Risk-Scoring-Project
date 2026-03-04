@@ -245,7 +245,7 @@ button.button {
 
 .landing-title-brand {
   color: #b42318;
-  font-size: 20px;
+  font-size: inherit;
   font-weight: 900;
 }
 
