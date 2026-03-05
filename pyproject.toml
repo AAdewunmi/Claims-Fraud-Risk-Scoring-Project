@@ -2,24 +2,60 @@
 [tool.black]
 line-length = 100
 target-version = ["py311"]
-exclude = '''
+extend-exclude = '''
 /(
   \.git
-| \.venv
-| venv
-| __pycache__
-| migrations
+  | \.venv
+  | venv
+  | build
+  | dist
+  | migrations
 )/
 '''
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-exclude = ["migrations"]
+extend-exclude = [
+  ".git",
+  ".venv",
+  "venv",
+  "build",
+  "dist",
+  "migrations",
+]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP"]
+select = ["E", "F", "I", "UP"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["policylens", "config", "apps", "tests"]
+known-first-party = ["policylens", "tests"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "policylens.config.settings"
+python_files = ["test_*.py", "*_tests.py"]
+testpaths = ["tests"]
+addopts = "--strict-markers --maxfail=1"
+markers = [
+  "integration: database-backed integration tests",
+  "pagination: pagination behaviour tests for reviewer and customer list views",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["policylens"]
+omit = [
+  "*/migrations/*",
+  "manage.py",
+]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+skip_empty = true
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]
