@@ -20,12 +20,12 @@ COPY . /app
 # Create a non-root user for production containers.
 RUN useradd --create-home --shell /bin/bash appuser \
   && mkdir -p /app/staticfiles /app/media /app/artifacts \
-  && chmod +x /app/docker/entrypoint.prod.sh \
+  && chmod +x /app/docker/entrypoint.sh /app/docker/entrypoint.prod.sh \
   && chown -R appuser:appuser /app
 
 USER appuser
 
 EXPOSE 8000
 
-ENTRYPOINT ["/app/docker/entrypoint.prod.sh"]
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
 CMD ["gunicorn", "policylens.config.wsgi:application", "--config", "/app/docker/gunicorn/gunicorn.conf.py"]
