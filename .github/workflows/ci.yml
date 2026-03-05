@@ -1,75 +1,127 @@
-# path: .github/workflows/ci.yml
-name: ci
+name: CI
 
 on:
-  pull_request:
   push:
-    branches: ["main"]
+    branches:
+      - main
+      - develop
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  quality-and-tests:
+    name: Quality gates and test suite
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: policylens
-          POSTGRES_USER: policylens
-          POSTGRES_PASSWORD: policylens
+          POSTGRES_DB: policylens_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U policylens -d policylens"
-          --health-interval=5s
-          --health-timeout=3s
-          --health-retries=20
+          --health-cmd "pg_isready -U postgres -d policylens_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
 
     env:
+      DJANGO_SETTINGS_MODULE: policylens.config.settings
+      DJANGO_SECRET_KEY: ci-secret-key
       DJANGO_DEBUG: "0"
-      DJANGO_SECRET_KEY: "ci-secret-key"
-      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
-      DATABASE_URL: "postgresql://policylens:policylens@localhost:5432/policylens"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost,http://127.0.0.1
+      DJANGO_SESSION_COOKIE_SECURE: "0"
+      DJANGO_CSRF_COOKIE_SECURE: "0"
+      DJANGO_SECURE_SSL_REDIRECT: "0"
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/policylens_test
+      PYTHONUNBUFFERED: "1"
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # Ensure base commit history is available for patch-status comparisons.
-          fetch-depth: 0
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          pip install -r requirements.txt
+          pip install black==24.10.0 ruff==0.8.6 pytest pytest-django pytest-cov coverage
 
-      - name: Format check (black)
+      - name: Wait for PostgreSQL
         run: |
-          python -m black . --check
+          for attempt in $(seq 1 30); do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres -d policylens_test; then
+              echo "PostgreSQL is ready."
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL (${attempt}/30)..."
+            sleep 2
+          done
 
-      - name: Lint (ruff)
+          echo "PostgreSQL did not become ready in time."
+          exit 1
+
+      - name: Run formatting check
+        run: black --check .
+
+      - name: Run linting
+        run: ruff check .
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
+      - name: Run collectstatic sanity check
+        run: python manage.py collectstatic --noinput --clear
+
+      - name: Run pagination tests first
+        shell: bash
         run: |
-          python -m ruff check .
+          mapfile -t PAGINATION_TESTS < <(
+            find tests -type f \( -name "test_*pagination*.py" -o -name "*_pagination.py" \) | sort
+          )
 
-      - name: Migrate
+          if [ "${#PAGINATION_TESTS[@]}" -eq 0 ]; then
+            echo "No pagination test modules were found."
+            echo "Expected at least one file matching test_*pagination*.py or *_pagination.py under tests/."
+            exit 1
+          fi
+
+          echo "Pagination test modules:"
+          printf '%s\n' "${PAGINATION_TESTS[@]}"
+
+          pytest -q "${PAGINATION_TESTS[@]}"
+
+      - name: Run full test suite with coverage gate
         run: |
-          python manage.py migrate --noinput
+          pytest -q \
+            --cov=policylens \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=85
 
-      - name: Run tests
-        run: |
-          pytest -q --cov=policylens --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-fail-under=80
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
         with:
-          files: ./coverage.xml
-          flags: unittests
-          name: github-actions-unittests
-          disable_search: true
-          verbose: true
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: error
