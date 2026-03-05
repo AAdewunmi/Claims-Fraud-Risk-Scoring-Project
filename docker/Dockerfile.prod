@@ -6,7 +6,6 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Keep system packages minimal. psycopg[binary] avoids needing build tooling.
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
@@ -17,10 +16,12 @@ RUN pip install --no-cache-dir -r /app/requirements.txt \
 
 COPY . /app
 
-# Create a non-root user for production containers.
+# Ensure the entrypoint is executable before switching user.
+RUN chmod +x /app/docker/entrypoint.sh
+
+# Create a non-root runtime user.
 RUN useradd --create-home --shell /bin/bash appuser \
   && mkdir -p /app/staticfiles /app/media /app/artifacts \
-  && chmod +x /app/docker/entrypoint.sh /app/docker/entrypoint.prod.sh \
   && chown -R appuser:appuser /app
 
 USER appuser
@@ -28,4 +29,4 @@ USER appuser
 EXPOSE 8000
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
-CMD ["gunicorn", "policylens.config.wsgi:application", "--config", "/app/docker/gunicorn/gunicorn.conf.py"]
+CMD ["gunicorn", "policylens.config.wsgi:application", "--config", "docker/gunicorn/gunicorn.conf.py"]
