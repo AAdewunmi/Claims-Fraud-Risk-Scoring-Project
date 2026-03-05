@@ -54,10 +54,13 @@ Expected:
 For one-off commands (migrations, seeding, etc.), use `run --rm`:
 
 ```bash
-docker compose -f docker/docker-compose.prod.yml run --rm web python manage.py migrate --noinput
+docker compose -f docker/docker-compose.prod.yml run --rm \
+  -e RUN_MIGRATIONS=0 \
+  -e RUN_COLLECTSTATIC=0 \
+  web python manage.py migrate --noinput
 ```
 
-Note: the production entrypoint runs migrations and `collectstatic` automatically only when starting Gunicorn, not for one-off `manage.py` commands.
+Note: the production entrypoint now waits for DB readiness and runs migrations plus `collectstatic` before any command. For one-off `manage.py` commands, set `RUN_MIGRATIONS=0` and `RUN_COLLECTSTATIC=0` to avoid duplicate startup tasks.
 
 ## Stop the stack
 
