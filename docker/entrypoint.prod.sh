@@ -1,14 +1,5 @@
-#!/usr/bin/env sh
+#!/bin/sh
 set -eu
 
-if [ "${1:-}" = "gunicorn" ]; then
-  if [ "${DJANGO_RUN_MIGRATIONS:-1}" = "1" ]; then
-    python manage.py migrate --noinput
-  fi
-
-  if [ "${DJANGO_COLLECTSTATIC:-1}" = "1" ]; then
-    python manage.py collectstatic --noinput
-  fi
-fi
-
-exec "$@"
+# Backward-compatible shim. The canonical entrypoint is docker/entrypoint.sh.
+exec /app/docker/entrypoint.sh "$@"
