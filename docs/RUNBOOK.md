@@ -1,47 +1,55 @@
-# path: docs/RUNBOOK.md
 # PolicyLens production stack runbook
 
-This runbook proves PolicyLens runs behind an Nginx reverse proxy with Gunicorn, and that querystring pagination survives the proxy boundary. The checks are designed for Sprint 7, where each surface can be validated without hand edits, and page 2 is a deliberate proof point rather than a lucky accident.
+Operational runbook for validating and operating PolicyLens in its production-shaped Docker profiles.
 
-Two compose profiles exist for production-shaped validation. The HTTP profile is for local smoke validation on `localhost:8080`. The secure profile is for a production-style settings shape where secure cookies and redirect behaviour are enabled, and it is intended to match the deployed environment rather than a laptop.
+## Scope
+
+This runbook covers:
+
+- Nginx + Gunicorn runtime profile
+- health verification
+- multi-surface route verification
+- proxy-safe pagination checks (`?page=2`)
+- evidence export checks (JSON and PDF)
+
+## Compose profiles
+
+- HTTP smoke profile: `docker/docker-compose.prod.yml`
+  - local endpoint: `http://localhost:8080`
+  - env file: `.env`
+- secure profile: `docker/docker-compose.prod.secure.yml`
+  - local endpoint: `http://localhost`
+  - env file: `.env.prod`
 
 ## Pre-flight
 
-PolicyLens currently has two production-oriented compose profiles:
+- Docker Desktop and Compose v2 installed
+- `.env` and/or `.env.prod` present at repo root
+- production secrets/hosts configured correctly for target environment
 
-- `docker/docker-compose.prod.yml` for local smoke validation on HTTP (`localhost:8080`)
-- `docker/docker-compose.prod.secure.yml` for secure production-style settings
+## Start stack
 
-Important:
-
-- `docker/docker-compose.prod.yml` reads `../.env` (repo root `.env`).
-- `docker/docker-compose.prod.secure.yml` reads `../.env.prod` (repo root `.env.prod`).
-- `.env.prod` is ignored by `.gitignore` (`.env.*`), so it exists locally but is not tracked in git.
-- Replace placeholder values in `.env.prod` before deployment.
-
-## Start the production stack (HTTP profile)
+HTTP smoke profile:
 
 ```bash
 docker compose -f docker/docker-compose.prod.yml up --build -d
 ```
 
-## Secure profile launch
+Secure profile:
 
 ```bash
 docker compose -f docker/docker-compose.prod.secure.yml up --build -d
 ```
 
-## Smoke checks
+## Health and readiness checks
 
-Run these once the selected stack is up:
-
-For HTTP profile (`prod.yml`):
+HTTP smoke profile:
 
 ```bash
 curl -i http://localhost:8080/api/health/
 ```
 
-For secure profile (`prod.secure.yml`, mapped on port 80):
+Secure profile:
 
 ```bash
 curl -i http://localhost/api/health/
@@ -49,12 +57,13 @@ curl -i http://localhost/api/health/
 
 Expected:
 
-- HTTP `200`
-- JSON body contains `"status":"ok"`
+- `200 OK`
+- JSON contains `status: ok`
+- JSON includes DB check status
 
-### Surface checks
+## Surface checks
 
-HTTP profile:
+HTTP profile URLs:
 
 - `http://localhost:8080/login/admin/`
 - `http://localhost:8080/login/reviewer/`
@@ -62,7 +71,7 @@ HTTP profile:
 - `http://localhost:8080/ops/queue/?page=2`
 - `http://localhost:8080/customer/?page=2`
 
-Secure profile:
+Secure profile URLs:
 
 - `http://localhost/login/admin/`
 - `http://localhost/login/reviewer/`
@@ -70,9 +79,35 @@ Secure profile:
 - `http://localhost/ops/queue/?page=2`
 - `http://localhost/customer/?page=2`
 
+## API checks through proxy
+
+Queue check:
+
+```bash
+curl -i -u reviewer1:password123 "http://localhost:8080/api/queue/claims/?priority=HIGH"
+```
+
+ML scoring check:
+
+```bash
+curl -i -u reviewer1:password123 -X POST "http://localhost:8080/api/claims/1/ml-score/"
+```
+
+Evidence export checks:
+
+```bash
+curl -i -u reviewer1:password123 "http://localhost:8080/api/claims/1/audit-export/"
+curl -i -u reviewer1:password123 "http://localhost:8080/api/claims/1/audit-export/?format=pdf"
+```
+
+Expected evidence behavior:
+
+- JSON response includes attachment filename ending `.json`
+- PDF response has `Content-Type: application/pdf` and filename ending `.pdf`
+
 ## One-off admin commands
 
-For one-off commands (migrations, seeding, etc.), use `run --rm`:
+The production entrypoint runs DB wait, migrations, and collectstatic. For one-off commands, skip startup automations:
 
 ```bash
 docker compose -f docker/docker-compose.prod.yml run --rm \
@@ -81,11 +116,20 @@ docker compose -f docker/docker-compose.prod.yml run --rm \
   web python manage.py migrate --noinput
 ```
 
-Note: the production entrypoint waits for DB readiness and runs migrations plus `collectstatic` before any command. For one-off `manage.py` commands, set `RUN_MIGRATIONS=0` and `RUN_COLLECTSTATIC=0` to avoid duplicate startup tasks.
-
-## Stop the stack
+## Stop stack
 
 ```bash
 docker compose -f docker/docker-compose.prod.yml down
 docker compose -f docker/docker-compose.prod.secure.yml down
 ```
+
+## Troubleshooting
+
+- `401 Unauthorized` on API calls
+  - provide Basic auth (`-u user:pass`) or `--netrc-file`
+- `404` on queue endpoint
+  - use `/api/queue/claims/` (not `/api/claims/queue/`)
+- `404` on ML endpoint
+  - use `/api/claims/{id}/ml-score/` (not `/score/`)
+- idempotency conflict
+  - same key + different payload correctly returns `409`
