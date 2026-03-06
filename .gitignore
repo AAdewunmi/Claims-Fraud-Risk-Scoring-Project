@@ -21,6 +21,7 @@ media/
 !.env.example
 !.env.template
 !.env.sample
+.curl-auth
 
 # Tooling
 .pytest_cache/
