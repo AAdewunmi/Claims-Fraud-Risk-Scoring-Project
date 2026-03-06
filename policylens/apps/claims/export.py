@@ -146,8 +146,10 @@ def load_claim_for_export(*, claim_id: int) -> Claim:
         Fully loaded Claim instance.
     """
     return (
-        Claim.objects.select_related("policy", "policy__holder", "sla_clock", "ml_score")
+        Claim.objects.select_related("policy", "policy__holder")
         .prefetch_related(
+            "sla_clock",
+            "ml_score",
             Prefetch("documents", queryset=ClaimDocument.objects.order_by("uploaded_at")),
             Prefetch("notes", queryset=InternalNote.objects.order_by("created_at")),
             Prefetch("decisions", queryset=ReviewDecision.objects.order_by("decided_at")),
