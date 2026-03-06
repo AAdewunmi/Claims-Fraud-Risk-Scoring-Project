@@ -1,0 +1,6 @@
+{
+  "policy_id": 1,
+  "claim_type": "CLAIM",
+  "priority": "HIGH",
+  "summary": "Idempotency demo claim changed payload."
+}
