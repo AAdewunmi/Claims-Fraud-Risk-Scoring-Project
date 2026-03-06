@@ -1,106 +1,122 @@
-# path: docs/DEPLOYMENT.md
 # PolicyLens deployment configuration
 
-This document describes the environment variables and settings expectations for running PolicyLens behind an Nginx reverse proxy. The goal is a production profile that is safe by default without breaking role-based login flows or paginated list navigation.
+This document defines the production deployment shape for PolicyLens and the environment contract required to run safely behind Nginx.
 
-## Surface routes
+## Deployment targets
 
-Nginx should route these prefixes to the Django app:
+PolicyLens provides two production-oriented Docker Compose profiles:
 
-- / serves the public landing page
-- /login/admin/, /login/reviewer/, and /login/customer/ serve surface entry points
-- /console/admin/, /console/reviewer/, and /console/customer/ serve role consoles
-- /customer/* serves customer pages
-- /ops/* serves ops pages
-- /api/* serves DRF endpoints, including /api/health/
-
-Static and media routes are typically served by Nginx from shared volumes:
-
-- /static/ from the collectstatic output directory (`STATIC_ROOT`, default `/app/staticfiles`)
-- /media/ from the uploaded media directory (`MEDIA_ROOT`, default `/app/media`)
+- `docker/docker-compose.prod.yml`
+  - HTTP smoke profile for local validation (`http://localhost:8080`)
+  - uses repo-root `.env`
+- `docker/docker-compose.prod.secure.yml`
+  - secure production-style profile
+  - uses repo-root `.env.prod`
 
 ## Required environment variables
 
-These must be set in the production runtime environment:
+Minimum required variables for production runtime:
 
-- DJANGO_SECRET_KEY
-- DJANGO_ALLOWED_HOSTS
-- DATABASE_URL
-- DJANGO_CSRF_TRUSTED_ORIGINS
+- `DJANGO_SECRET_KEY`
+- `DJANGO_ALLOWED_HOSTS`
+- `DATABASE_URL`
+- `DJANGO_CSRF_TRUSTED_ORIGINS`
 
-## Secure compose profile
+Recommended security-related variables:
 
-For the secure Docker profile (`docker/docker-compose.prod.secure.yml`):
+- `DJANGO_SECURE_SSL_REDIRECT`
+- `DJANGO_SESSION_COOKIE_SECURE`
+- `DJANGO_CSRF_COOKIE_SECURE`
+- `DJANGO_SECURE_PROXY_SSL_HEADER`
+- `DJANGO_USE_X_FORWARDED_HOST`
+- `DJANGO_SECURE_HSTS_SECONDS`
+- `DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS`
+- `DJANGO_SECURE_HSTS_PRELOAD`
 
-- `.env.prod` is ignored by `.gitignore` (`.env.*`) and is not committed.
-- Replace all placeholder values in `.env.prod` before deployment.
-- Launch with `docker compose -f docker/docker-compose.prod.secure.yml up --build`.
+## Reverse proxy contract
 
-## Reverse proxy and HTTPS detection
+Nginx should forward requests to the Django/Gunicorn service and preserve host/proto information.
 
-Django must understand that the external client connection is HTTPS even though Nginx forwards requests to Django over HTTP. This is required for secure cookies, CSRF, and correct redirect behaviour.
+Expected route coverage:
 
-Expected headers from Nginx:
+- `/`
+- `/login/*`
+- `/console/*`
+- `/customer/*`
+- `/ops/*`
+- `/api/*`
 
-- X-Forwarded-Proto: https
-- Host: your public host
+Expected proxy headers:
 
-Optional header when you need it:
+- `X-Forwarded-Proto`
+- `Host`
+- optional: `X-Forwarded-Host`
 
-- X-Forwarded-Host: your public host
+Static/media expectations:
 
-Settings involved:
+- `/static/` served from `STATIC_ROOT` (default `/app/staticfiles`)
+- `/media/` served from `MEDIA_ROOT` (default `/app/media`)
 
-- SECURE_PROXY_SSL_HEADER is enabled via DJANGO_SECURE_PROXY_SSL_HEADER
-- USE_X_FORWARDED_HOST is enabled via DJANGO_USE_X_FORWARDED_HOST
+## Launch commands
 
-Note:
+HTTP smoke profile:
 
-- `LOGIN_URL` is set to `/login/` in settings as a framework default.
-- Product surface logins are routed at `/login/admin/`, `/login/reviewer/`, and `/login/customer/`.
+```bash
+docker compose -f docker/docker-compose.prod.yml up --build -d
+```
 
-## CSRF trusted origins
+Secure profile:
 
-When running behind a proxy, CSRF validation requires the deployed origin to be explicitly trusted. Django expects scheme-qualified origins.
+```bash
+docker compose -f docker/docker-compose.prod.secure.yml up --build -d
+```
 
-Set DJANGO_CSRF_TRUSTED_ORIGINS as a comma separated list, for example:
+## Runtime behavior
 
-- https://policylens.example.com
-- https://www.policylens.example.com
+The container entrypoint (`docker/entrypoint.sh`) performs deterministic startup tasks:
 
-If this is missing or wrong, login POSTs and other form submissions will fail with 403 CSRF errors.
+- waits for DB readiness
+- runs migrations (unless disabled)
+- runs collectstatic (unless disabled)
+- starts the runtime command (Gunicorn)
 
-## Secure cookies
+For one-off admin commands, disable startup automation:
 
-When DEBUG is off, the production default is to enable secure cookies:
+```bash
+docker compose -f docker/docker-compose.prod.yml run --rm \
+  -e RUN_MIGRATIONS=0 \
+  -e RUN_COLLECTSTATIC=0 \
+  web python manage.py migrate --noinput
+```
 
-- SESSION_COOKIE_SECURE
-- CSRF_COOKIE_SECURE
+## Post-deploy verification
 
-These require HTTPS at the browser. If you test locally without TLS, override:
+Health:
 
-- DJANGO_SESSION_COOKIE_SECURE=0
-- DJANGO_CSRF_COOKIE_SECURE=0
-- DJANGO_SECURE_SSL_REDIRECT=0
+```bash
+curl -i http://localhost:8080/api/health/
+```
 
-When running with real HTTPS termination, keep them enabled.
+Secure profile example (local port mapping):
 
-## Recommended production flags
+```bash
+curl -i http://localhost/api/health/
+```
 
-These are available as environment variables but are intentionally conservative by default:
+Expected:
 
-- DJANGO_SECURE_SSL_REDIRECT
-- DJANGO_SECURE_HSTS_SECONDS
-- DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS
-- DJANGO_SECURE_HSTS_PRELOAD
+- `200 OK`
+- JSON body includes `{"status":"ok"}` and DB check status
 
-Enable HSTS only once the domain, HTTPS termination, and redirects are stable.
+Surface smoke checks:
 
-## Quick verification checklist
+- `/login/admin/`
+- `/login/reviewer/`
+- `/login/customer/`
+- `/ops/queue/?page=2`
+- `/customer/?page=2`
 
-These checks are the minimum proof that proxy and security settings did not break the product surfaces:
+Evidence export checks:
 
-- /login/admin/, /login/reviewer/, /login/customer/ accept credentials and establish a session
-- /ops/queue/?page=2 loads after login and keeps pagination links working
-- /customer/?page=2 loads after login and keeps pagination links working
-- /api/health/ returns 200 with status ok
+- `GET /api/claims/{id}/audit-export/` (JSON)
+- `GET /api/claims/{id}/audit-export/?format=pdf` (PDF)

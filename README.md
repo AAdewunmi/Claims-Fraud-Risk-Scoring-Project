@@ -7,71 +7,57 @@
 [![PostgreSQL](https://img.shields.io/badge/postgresql-16-336791.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/docker-enabled-2496ED.svg)](https://www.docker.com/)
 [![Docker Compose](https://img.shields.io/badge/docker%20compose-supported-2496ED.svg)](https://docs.docker.com/compose/)
-[![Licence](https://img.shields.io/github/license/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)](https://github.com/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)](https://github.com/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/blob/main/LICENSE)
 [![Coverage Status](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project/branch/main/graph/badge.svg)](https://codecov.io/gh/AAdewunmi/Claims-Fraud-Risk-Scoring-Project)
 
 # PolicyLens
 
-Insurance claims workflow platform with API-first domain logic, role-specific web surfaces, and auditable fraud-risk triage.
+Production-ready insurance claims workflow platform with an API-first domain model, role-specific operational surfaces, ML-assisted completeness scoring, and auditable evidence export.
 
-## Status
+## Project Status
 
-**Production app build in progress**  
-Snapshot date: **February 28, 2026**
+Completed.
 
-- Core product workflows are implemented and running in Docker.
-- CI quality gates are active (Black, Ruff, pytest, coverage threshold).
-- Multi-surface routing is live for admin, reviewer, and customer roles.
-- Production deployment profile and operational hardening are the active build track.
+As of March 6, 2026, PolicyLens includes the full Sprint 1-7 scope:
 
-## What is live today
+- End-to-end claims workflow APIs (create, retrieve, documents, notes, decisions).
+- SLA-aware operational queue with deterministic filtering and ordering.
+- Multi-surface routing for admin, reviewer, and customer user journeys.
+- Health/readiness endpoint for runtime and infrastructure checks.
+- Idempotency protection for write endpoints.
+- ML scoring with persisted metadata and reason codes.
+- Audit evidence export in JSON and PDF.
+- Production-shaped Docker stack with Gunicorn + Nginx profiles.
+- CI gates for Black, Ruff, pytest, and coverage threshold enforcement.
 
-### Core domain and API
+## Core Capabilities
 
-- Claim intake for claim and policy-change types.
-- Document upload, internal notes, and review decisions.
-- Append-only audit events and JSON evidence export.
-- Queue API with status, priority, and SLA filtering.
-- ML scoring endpoint with persisted score metadata and reason codes.
-- Idempotency support for write endpoints.
-- Health check endpoint at `/api/health/`.
+### API and domain workflow
 
-### Web surfaces
+- Claim intake for `CLAIM` and `POLICY_CHANGE` types.
+- Document upload, internal note capture, and reviewer decisioning.
+- Append-only audit events attached to workflow actions.
+- Queue endpoint with `status`, `priority`, and SLA filter options.
+- Idempotency-key support for safe client retries on write endpoints.
 
-- Public landing page with role entry points.
-- Surface-specific login routes:
-  - `/login/admin/`
-  - `/login/reviewer/`
-  - `/login/customer/`
-- Role-gated console home routes:
-  - `/console/admin/`
-  - `/console/reviewer/`
-  - `/console/customer/`
-- Ops surface:
-  - `/ops/queue/` with pagination and filter-preserving links
-  - `/ops/claims/{id}/` claim detail page
-  - HTMX actions for notes, documents, decisions, and ML scoring
-- Customer surface:
-  - `/customer/` paginated claim list
-  - `/customer/claims/{id}/` detail view
-  - `/customer/claims/{id}/documents/upload/`
+### Ops and customer surfaces
 
-### Quality baseline
+- Public landing page and role entry routes.
+- Role-gated console routes for admin/reviewer/customer.
+- Reviewer ops queue and claim detail with HTMX actions.
+- Customer claim list/detail views with pagination.
 
-- Latest local run: **166 tests passed**, coverage **94.43%**.
-- CI enforces coverage floor at **80%**.
-- Test suite includes API, UI surface, authz, pagination, idempotency, SLA, and ML contract checks.
+### Evidence and ML
 
-## Sprint delivery summary
+- JSON evidence bundle export for claim audits.
+- PDF evidence bundle export for portability/compliance workflows.
+- ML completeness scoring endpoint with:
+  - score
+  - label
+  - reason codes
+  - model version metadata
 
-- **Sprint 1:** Project setup, Docker + Postgres, baseline API and test harness.
-- **Sprint 2:** Claim workflow APIs, notes/documents/decisions, seed data path.
-- **Sprint 3:** Queue ordering, audit events, audit export JSON, idempotency layer.
-- **Sprint 4:** ML feature contract, training/scoring flow, persisted score metadata.
-- **Sprint 5:** Multi-surface web app, console routing, ops and customer surface coverage.
-- **Sprint 6 (current):** Production hardening and deployment readiness.
-
-## API surface map
+## API Surface
 
 - `GET /api/health/`
 - `POST /api/claims/`
@@ -83,17 +69,26 @@ Snapshot date: **February 28, 2026**
 - `POST /api/claims/{id}/ml-score/`
 - `GET /api/claims/{id}/audit-events/`
 - `GET /api/claims/{id}/audit-export/`
+- `GET /api/claims/{id}/audit-export/?format=pdf`
 - `GET /api/queue/claims/?status=&priority=&sla=breached|due_soon|ok`
 
 ## Architecture
 
-- Django + DRF application (`policylens/`) with PostgreSQL persistence.
-- Service-layer workflow logic in `policylens/apps/claims/services.py`.
-- Role and surface authorization helpers in `policylens/apps/core/authz.py`.
-- Shared pagination contract in `policylens/apps/core/pagination.py`.
-- Server-rendered templates with HTMX partial updates for low-friction ops actions.
+- Backend: Django + Django REST Framework
+- Database: PostgreSQL
+- Frontend: Django Templates + HTMX (server-rendered interactions)
+- ML: scikit-learn inference and persisted scoring metadata
+- Runtime: Docker Compose, Gunicorn, Nginx
 
-## Local development
+Key modules:
+
+- `policylens/apps/claims/` domain logic, APIs, queue, export, ML
+- `policylens/apps/core/` authz, idempotency, pagination utilities
+- `policylens/apps/ops/` reviewer workflows and HTMX endpoints
+- `policylens/apps/customer/` customer workflow surface
+- `policylens/apps/api/` top-level API wiring and health endpoint
+
+## Local Development
 
 ### Prerequisites
 
@@ -103,18 +98,18 @@ Snapshot date: **February 28, 2026**
 
 1. Copy environment file:
    - `cp .env.example .env`
-2. Build and start services:
+2. Start the app stack:
    - `docker compose up --build`
-3. Seed deterministic sample records:
+3. Seed baseline records and users:
    - `docker compose exec web python manage.py seed_sample_data`
-4. Seed demo users and pagination-focused demo claims:
+4. Optional: add expanded demo users/data:
    - `docker compose exec web python manage.py create_demo_users`
-5. Open app surfaces:
+5. Open:
    - `http://localhost:8000/`
    - `http://localhost:8000/api/health/`
    - `http://localhost:8000/ops/queue/`
 
-### Seeded users
+### Seeded credentials
 
 From `seed_sample_data`:
 
@@ -127,32 +122,50 @@ From `create_demo_users`:
 - `demo_reviewer / pass-12345-strong`
 - `demo_customer / pass-12345-strong`
 
-## Validation commands
+## Production-shaped profiles
+
+HTTP smoke profile:
+
+- `docker compose -f docker/docker-compose.prod.yml up --build -d`
+- App entrypoint: `http://localhost:8080/`
+
+Secure profile:
+
+- `docker compose -f docker/docker-compose.prod.secure.yml up --build -d`
+- App entrypoint: `http://localhost/`
+
+See:
+
+- `docs/DEPLOYMENT.md`
+- `docs/RUNBOOK.md`
+
+## Quality and Validation
+
+Local validation commands:
 
 - `docker compose exec web python -m black . --check`
 - `docker compose exec web python -m ruff check .`
-- `docker compose exec web pytest -q --cov=policylens --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-fail-under=80`
+- `docker compose exec web pytest -q --cov=policylens --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-fail-under=85`
 
-## Production hardening backlog
+Latest local full suite run:
 
-Current priority items for deployment readiness:
+- `201 passed in 103.68s` (March 6, 2026)
 
-- Add production runtime profile (Gunicorn + reverse proxy).
-- Add production compose/deploy artifacts and environment split.
-- Tighten security settings by environment (hosts, cookies, headers, static/media strategy).
-- Introduce scheduled/background execution for SLA sweep and bulk scoring.
-- Extend evidence export format options (for example PDF).
+CI gates enforce:
 
-## Repository layout
+- formatting (`black --check`)
+- lint (`ruff check`)
+- migrations + collectstatic sanity
+- pagination-first test execution
+- full test suite with coverage threshold
 
-- `policylens/apps/claims/` claims domain, API, queue, export, ML
-- `policylens/apps/ops/` ops views, templates, HTMX endpoints
-- `policylens/apps/customer/` customer portal views and templates
-- `policylens/apps/accounts/` surface login and access flows
-- `policylens/apps/console/` role console surfaces
-- `policylens/apps/core/` authz, idempotency, pagination utilities
-- `tests/` integration and contract tests
-- `docs/` project documentation
+## Documentation
+
+- `docs/DEPLOYMENT.md` production configuration and environment guidance
+- `docs/RUNBOOK.md` operational runbook for prod-shaped stacks
+- `docs/DEMO.md` manual demo checklist
+- `docs/DEMO_SCRIPT.md` automated demo script usage
+- `docs/Syllabus.md` complete sprint-by-sprint delivery map
 
 ## License
 

@@ -1,44 +1,98 @@
-# PolicyLens demo
+# PolicyLens demo (completed project)
 
-This demo validates Sprint 6 multi-surface behavior with deterministic routing,
-role boundaries, and pagination.
+This checklist validates the complete Sprint 7 experience across API, surfaces, pagination, and evidence export.
 
 ## Prerequisites
 
-The project should already be running via Docker Compose.
+- Docker Desktop running
+- Repo-root `.env` present (`cp .env.example .env` if needed)
 
-## Login entry points
+## Start and seed
 
-Use the surface entry points:
+```bash
+docker compose up --build -d
+docker compose exec web python manage.py migrate --noinput
+docker compose exec web python manage.py seed_sample_data
+docker compose exec web python manage.py create_demo_users
+```
 
-- Admin login: `/login/admin/`
-- Reviewer login: `/login/reviewer/`
-- Customer login: `/login/customer/`
+## Baseline quality checks
 
-## Console-only runbook
-
-Run:
-
-- `docker compose exec web python manage.py check`
-- `docker compose exec web python manage.py migrate`
-- `docker compose exec web python -m black . --check`
-- `docker compose exec web python -m ruff check .`
-- `docker compose exec web pytest -q`
-- `docker compose exec web python manage.py seed_sample_data`
-- `docker compose exec web pytest -q tests/test_surface_smoke.py`
+```bash
+docker compose exec web python -m black . --check
+docker compose exec web python -m ruff check .
+docker compose exec web pytest -q
+```
 
 Expected:
 
-- `check`, `migrate`, `black --check`, and `ruff check` complete without errors.
-- `pytest -q` passes.
-- `seed_sample_data` prints:
-  `Seeded roles (reviewer, admin), users (reviewer1/admin1), holders, policies, claims.`
-- `tests/test_surface_smoke.py` passes and validates `?page=1` and `?page=2` return `200`
-  for the relevant reviewer and customer surfaces.
+- formatter/lint checks pass
+- full test suite passes
 
-## Seeded local credentials
+## Health and routing
 
-From `seed_sample_data`:
+```bash
+curl -i http://localhost:8000/api/health/
+```
 
-- `reviewer1 / password123`
-- `admin1 / password123`
+Expected:
+
+- `200 OK`
+- JSON payload includes service status and DB readiness check
+
+## Surface entry points
+
+- `http://localhost:8000/login/admin/`
+- `http://localhost:8000/login/reviewer/`
+- `http://localhost:8000/login/customer/`
+
+## Pagination proof points
+
+- Reviewer queue page 1: `http://localhost:8000/ops/queue/?page=1`
+- Reviewer queue page 2: `http://localhost:8000/ops/queue/?page=2`
+- Customer list page 1: `http://localhost:8000/customer/?page=1`
+- Customer list page 2: `http://localhost:8000/customer/?page=2`
+
+## API checks
+
+### Idempotent claim creation
+
+Use `sample-claim.json` and `sample-claim-changed.json` from repo root.
+
+```bash
+curl --netrc-file .curl-auth -i -X POST http://localhost:8000/api/claims/ \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: demo-key-001" \
+  -d @sample-claim.json
+
+curl --netrc-file .curl-auth -i -X POST http://localhost:8000/api/claims/ \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: demo-key-001" \
+  -d @sample-claim.json
+
+curl --netrc-file .curl-auth -i -X POST http://localhost:8000/api/claims/ \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: demo-key-001" \
+  -d @sample-claim-changed.json
+```
+
+Expected status flow: `201`, `201`, `409`.
+
+### Queue and ML
+
+```bash
+curl --netrc-file .curl-auth -i "http://localhost:8000/api/queue/claims/?priority=HIGH"
+curl --netrc-file .curl-auth -i -X POST "http://localhost:8000/api/claims/1/ml-score/"
+```
+
+### Evidence export
+
+```bash
+curl --netrc-file .curl-auth -i "http://localhost:8000/api/claims/1/audit-export/"
+curl --netrc-file .curl-auth -i "http://localhost:8000/api/claims/1/audit-export/?format=pdf"
+```
+
+Expected:
+
+- JSON export returns attachment filename ending `.json`
+- PDF export returns `Content-Type: application/pdf` and attachment filename ending `.pdf`

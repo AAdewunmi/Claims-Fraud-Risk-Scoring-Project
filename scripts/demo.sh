@@ -144,6 +144,10 @@ echo ""
 echo "JSON export"
 echo "curl -i -u reviewer1:password123 \"${PROXY_URL}/api/claims/${DEMO_CLAIM_ID_FOR_EXPORT}/audit-export/\""
 echo ""
+echo "PDF export"
+echo "curl -i -u reviewer1:password123 \"${PROXY_URL}/api/claims/${DEMO_CLAIM_ID_FOR_EXPORT}/audit-export/?format=pdf\""
+echo ""
+
 echo "Fetching JSON export into ./claim_${DEMO_CLAIM_ID_FOR_EXPORT}_audit_export.json"
 echo ""
 curl -sS -u reviewer1:password123 \
@@ -151,7 +155,11 @@ curl -sS -u reviewer1:password123 \
   -o "claim_${DEMO_CLAIM_ID_FOR_EXPORT}_audit_export.json"
 
 echo ""
-echo "PDF export is pending implementation in a follow-up issue."
+echo "Fetching PDF export into ./claim_${DEMO_CLAIM_ID_FOR_EXPORT}_audit_export.pdf"
+echo ""
+curl -sS -u reviewer1:password123 \
+  "${PROXY_URL}/api/claims/${DEMO_CLAIM_ID_FOR_EXPORT}/audit-export/?format=pdf" \
+  -o "claim_${DEMO_CLAIM_ID_FOR_EXPORT}_audit_export.pdf"
 
 echo ""
 echo "Done"
