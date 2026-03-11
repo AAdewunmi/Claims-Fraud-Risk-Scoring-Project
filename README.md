@@ -104,6 +104,34 @@ Key modules:
 - `policylens/apps/customer/` customer workflow surface
 - `policylens/apps/api/` top-level API wiring and health endpoint
 
+## Repository Structure
+
+```text
+.
+├── policylens/
+│   ├── apps/
+│   │   ├── accounts/        # auth/login surfaces
+│   │   ├── api/             # top-level API routes and health
+│   │   ├── claims/          # claims domain, APIs, queue, export, ML
+│   │   ├── console/         # role-specific console views
+│   │   ├── core/            # shared authz/idempotency/pagination utilities
+│   │   ├── customer/        # customer-facing workflows
+│   │   ├── ops/             # reviewer ops UI + HTMX endpoints
+│   │   └── public/          # public landing routes/views
+│   ├── config/              # Django settings, URL config, ASGI/WSGI
+│   ├── templates/           # shared templates
+│   └── static/              # shared static assets
+├── tests/                   # pytest suite (API, UI, ML, authz, SLA)
+├── docs/                    # deployment, runbook, demo and syllabus docs
+├── docker/                  # production Dockerfiles, nginx, gunicorn config
+├── scripts/                 # helper scripts (for demos/local workflows)
+├── artifacts/               # generated artifacts/evidence output
+├── media/                   # uploaded files (local/dev)
+├── docker-compose.yml       # local dev stack
+├── Dockerfile               # local/dev image build
+└── manage.py                # Django management entrypoint
+```
+
 ## Local Development
 
 ### Prerequisites
