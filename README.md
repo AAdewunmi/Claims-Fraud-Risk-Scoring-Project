@@ -80,6 +80,22 @@ As of March 6, 2026, PolicyLens includes the full Sprint 1-7 scope:
 - ML: scikit-learn inference and persisted scoring metadata
 - Runtime: Docker Compose, Gunicorn, Nginx
 
+## Technologies Used
+
+- Language/runtime: Python 3.11
+- Backend framework: Django 5.x
+- API framework: Django REST Framework 3.15.x
+- Database: PostgreSQL 16 (Docker image: `postgres:16-alpine`)
+- UI layer: Django Templates, HTMX 1.9.12, Bootstrap 5.3.3, custom CSS
+- ML stack: scikit-learn, NumPy, joblib
+- App server: Gunicorn
+- Reverse proxy: Nginx 1.27 (Docker image: `nginx:1.27-alpine`)
+- Environment/config: `django-environ`
+- Containerization: Docker + Docker Compose
+- Testing: pytest, pytest-django, pytest-cov, factory-boy, Faker
+- Code quality: Ruff, Black, Flake8
+- CI/coverage: GitHub Actions, Codecov
+
 Key modules:
 
 - `policylens/apps/claims/` domain logic, APIs, queue, export, ML
