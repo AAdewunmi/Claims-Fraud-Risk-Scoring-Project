@@ -57,6 +57,10 @@ As of March 6, 2026, PolicyLens includes the full Sprint 1-7 scope:
   - reason codes
   - model version metadata
 
+## Landing Page
+
+<img width="800" height="617" alt="Image" src="https://github.com/user-attachments/assets/0cfa9384-33f5-4141-a495-299cdfc88303" />
+
 ## API Surface
 
 - `GET /api/health/`
